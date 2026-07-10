@@ -21,6 +21,7 @@ public struct AlertView: View {
         meeting: Meeting,
         background: AlertBackground,
         snoozeMinutes: [Int],
+        preArmed: Bool = false,
         onJoin: @escaping (Meeting) -> Void,
         onSnooze: @escaping (Meeting, TimeInterval?) -> Void,
         onDismiss: @escaping (Meeting) -> Void
@@ -28,6 +29,7 @@ public struct AlertView: View {
         self.meeting = meeting
         self.background = background
         self.snoozeMinutes = snoozeMinutes
+        _armed = State(initialValue: preArmed)
         self.onJoin = onJoin
         self.onSnooze = onSnooze
         self.onDismiss = onDismiss

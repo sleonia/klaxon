@@ -10,6 +10,15 @@ Built for people who lose track of time: heads-down in deep work, context
 switching all day, or just tired of tiny notifications that vanish before you
 look up.
 
+## Screenshots
+
+The alert fills the screen so you can't miss it, with a one-click Join and your
+chosen snooze buttons. Ten built-in themes (or your own image):
+
+![Klaxon full-screen alert — Classic theme](docs/screenshots/alert-classic.png)
+
+![Klaxon full-screen alert — Ocean theme](docs/screenshots/alert-ocean.png)
+
 ## Features
 
 - **Full-screen alerts** on every connected display, above other apps and

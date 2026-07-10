@@ -29,6 +29,13 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     private var housekeepingTimer: Timer?
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
+        // Dev tool: render README screenshots offscreen, then exit.
+        if let i = CommandLine.arguments.firstIndex(of: "--screenshot"),
+           i + 1 < CommandLine.arguments.count {
+            ScreenshotRenderer.render(to: CommandLine.arguments[i + 1])
+            exit(0)
+        }
+
         settingsController = SettingsWindowController(
             prefs: prefs, calendarService: calendar,
             onTestAlert: { [weak self] in self?.showTestAlert() })
