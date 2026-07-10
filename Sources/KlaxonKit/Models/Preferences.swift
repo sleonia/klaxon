@@ -59,7 +59,14 @@ public final class Preferences: ObservableObject {
     /// Snooze durations (minutes) offered on the alert, in order. 0–3 entries.
     @Published public var snoozeMinutes: [Int] {
         didSet {
-            snoozeMinutes = Self.sanitizeSnooze(snoozeMinutes)
+            // Reassigning inside didSet re-fires didSet; only do so when
+            // sanitizing actually changes the value, so it terminates after
+            // one pass instead of recursing forever.
+            let clean = Self.sanitizeSnooze(snoozeMinutes)
+            guard snoozeMinutes == clean else {
+                snoozeMinutes = clean   // re-enters once; then clean == value → falls through
+                return
+            }
             defaults.set(snoozeMinutes, forKey: Key.snoozeMinutes)
             changed()
         }
