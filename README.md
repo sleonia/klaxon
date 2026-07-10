@@ -61,6 +61,15 @@ appears in your menu bar — you're done.
 
 Run the test suite with `swift test`.
 
+### Uninstall
+
+```sh
+./Scripts/clean.sh
+```
+
+Removes the installed app, local build artifacts, saved preferences, and
+Klaxon's calendar-permission grant.
+
 ## How it works
 
 The core is deliberately split so the interesting logic is pure and testable:
