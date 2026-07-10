@@ -41,27 +41,25 @@ chosen snooze buttons. Ten built-in themes (or your own image):
 - **Robust scheduling** — wake-from-sleep and clock-change aware, with a
   pre-flight re-check so moved or cancelled meetings don't fire stale alerts.
 
-## Requirements
+## Install
 
-- macOS 14 (Sonoma) or later
-- Swift 6 toolchain / Xcode 16+ to build
-
-## Build & install
+Requires **macOS 14 (Sonoma) or later** and the Xcode command-line tools
+(`xcode-select --install`). Then:
 
 ```sh
+git clone https://github.com/sleonia/klaxon.git
+cd klaxon
 ./Scripts/build-app.sh
 ```
 
-This builds a release binary, assembles `Klaxon.app`, ad-hoc code-signs it, and
-installs it to `/Applications` (or `~/Applications` if that isn't writable).
-Launch it, grant Calendar access when prompted, and the horn appears in your
-menu bar.
+That one script builds the app, signs it, and installs `Klaxon.app` into your
+Applications folder. Open it, grant Calendar access when prompted, and the horn
+appears in your menu bar — you're done.
 
-To run the tests:
+> The build is ad-hoc signed, so the first time you launch it macOS may ask you
+> to confirm. If it's blocked, right-click the app and choose **Open**.
 
-```sh
-swift test
-```
+Run the test suite with `swift test`.
 
 ## How it works
 
