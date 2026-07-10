@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds the release binary, assembles the ad-hoc-signed Klaxon.app bundle,
+# Builds the release binary, assembles the Klaxon.app bundle, code-signs it,
 # and installs it to an Applications folder so Spotlight/Raycast index it.
 #
 # TCC (calendar permission) requires a real bundle with usage strings —
@@ -19,7 +19,17 @@ cp .build/release/Klaxon "$APP/Contents/MacOS/${APP_NAME}"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 
-codesign --force --sign - "$APP"
+# Prefer the stable self-signed identity from setup-signing.sh (so macOS keeps
+# the Calendar permission across rebuilds); fall back to ad-hoc otherwise.
+SIGN_ID="Klaxon Local Signing"
+if security find-identity -p codesigning 2>/dev/null | grep -q "$SIGN_ID" \
+   && codesign --force --sign "$SIGN_ID" "$APP" 2>/dev/null; then
+    echo "Signed with '$SIGN_ID' (stable identity)."
+else
+    codesign --force --sign - "$APP"
+    echo "Ad-hoc signed. Tip: run ./Scripts/setup-signing.sh once so rebuilds"
+    echo "keep the Calendar permission instead of re-prompting."
+fi
 echo "Built: $APP"
 
 # Install where launchers index apps. Prefer /Applications, fall back to

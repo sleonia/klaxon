@@ -56,8 +56,13 @@ That one script builds the app, signs it, and installs `Klaxon.app` into your
 Applications folder. Open it, grant Calendar access when prompted, and the horn
 appears in your menu bar — you're done.
 
-> The build is ad-hoc signed, so the first time you launch it macOS may ask you
-> to confirm. If it's blocked, right-click the app and choose **Open**.
+> The build is signed locally, so the first time you launch it macOS may ask
+> you to confirm. If it's blocked, right-click the app and choose **Open**.
+
+> **Rebuilding often?** By default each rebuild gets a fresh ad-hoc signature,
+> so macOS re-asks for Calendar access every time. Run `./Scripts/setup-signing.sh`
+> **once** to create a stable local signing identity — after that, rebuilds keep
+> the same signature and the permission sticks.
 
 Run the test suite with `swift test`.
 

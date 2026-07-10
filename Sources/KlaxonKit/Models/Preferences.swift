@@ -26,6 +26,9 @@ public final class Preferences: ObservableObject {
     /// Overlay themeID sentinel selecting the user's custom background image.
     public static let customThemeID = "custom"
 
+    /// Overlay themeID sentinel selecting a random gradient theme per alert.
+    public static let randomThemeID = "random"
+
     /// Max number of snooze buttons shown on the alert.
     public nonisolated static let maxSnoozeButtons = 3
 

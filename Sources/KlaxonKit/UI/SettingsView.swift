@@ -62,6 +62,7 @@ private struct GeneralTab: View {
                         Text(theme.name).tag(theme.id)
                     }
                     Divider()
+                    Text("Random").tag(Preferences.randomThemeID)
                     Text("Custom Image…").tag(Preferences.customThemeID)
                 }
 

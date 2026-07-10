@@ -74,6 +74,9 @@ public enum AlertBackground {
                 return .image(url)
             }
         }
+        if themeID == Preferences.randomThemeID {
+            return .theme(Theme.all.randomElement() ?? Theme.all[0])
+        }
         return .theme(Theme.theme(id: themeID))
     }
 }

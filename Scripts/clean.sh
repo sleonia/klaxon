@@ -24,6 +24,9 @@ rm -f "${HOME}/Library/Preferences/${BUNDLE_ID}.plist"
 echo "Resetting calendar permission…"
 tccutil reset Calendar "$BUNDLE_ID" >/dev/null 2>&1 || true
 
+echo "Removing local signing keychain…"
+security delete-keychain klaxon-signing.keychain 2>/dev/null || true
+
 echo "Done."
 echo "Note: if you enabled 'Launch at login', macOS clears the orphaned entry"
 echo "shortly after the app is removed (System Settings › General › Login Items)."
