@@ -40,4 +40,14 @@ final class PreferencesTests: XCTestCase {
         prefs.snoozeMinutes = [1, 3, 5]           // already-clean assignment
         XCTAssertEqual(prefs.snoozeMinutes, [1, 3, 5])
     }
+
+    @MainActor
+    func testMenuBarIconOnlyDefaultsOffAndPersists() {
+        let defaults = UserDefaults(suiteName: "klaxon.test.\(UUID().uuidString)")!
+        XCTAssertFalse(Preferences(defaults: defaults).menuBarIconOnly)
+
+        Preferences(defaults: defaults).menuBarIconOnly = true
+        // A fresh instance reads back the persisted value.
+        XCTAssertTrue(Preferences(defaults: defaults).menuBarIconOnly)
+    }
 }
