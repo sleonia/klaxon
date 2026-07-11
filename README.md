@@ -144,20 +144,6 @@ Run the test suite with `swift test`.
 Removes the installed app, local build artifacts, saved preferences, and
 Klaxon's calendar-permission grant.
 
-## How it works
-
-The core is deliberately split so the interesting logic is pure and testable:
-
-- `MeetingLinkParser` — turns an event's URL/location/notes into a join link.
-- `AlertPlanner` — a pure function of `(meetings, config, snoozes, dismissed,
-  now)` that decides the single next alert to fire. No clocks, no EventKit.
-- `CalendarService` — the EventKit boundary (permission, fetching, change
-  monitoring); everything downstream works on plain `Meeting` values.
-- `MeetingScheduler` — a thin, wake-safe `DispatchSourceTimer` wrapper.
-- `OverlayWindowManager` + `AlertView` — the per-screen full-screen overlay.
-- `AppDelegate` — the composition root wiring the fetch → plan → arm → fire → act
-  loop, recomputing from scratch on every calendar change, wake, or clock jump.
-
 ## Permissions
 
 Klaxon needs **Full Calendar Access** to know when your meetings start. It uses
