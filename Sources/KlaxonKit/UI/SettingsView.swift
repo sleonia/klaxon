@@ -128,6 +128,13 @@ private struct GeneralTab: View {
             }
 
             Section {
+                Toggle("Show icon only in menu bar", isOn: $prefs.menuBarIconOnly)
+                Text("Hides the next meeting's title and countdown; shows just the menu-bar icon.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
                 Toggle("Launch at login", isOn: $prefs.launchAtLogin)
                     .disabled(!runningFromBundle)
                 if !runningFromBundle {

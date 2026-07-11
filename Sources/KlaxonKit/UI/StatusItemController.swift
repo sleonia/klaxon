@@ -15,6 +15,7 @@ public final class StatusItemController: NSObject, NSMenuDelegate {
     public var upcomingMeetings: (() -> [Meeting])?
     public var permissionState: (() -> PermissionState)?
     public var isPaused: (() -> Bool)?
+    public var menuBarIconOnly: (() -> Bool)?
     public var onTogglePause: (() -> Void)?
     public var onTestAlert: (() -> Void)?
     public var onOpenSettings: (() -> Void)?
@@ -54,17 +55,23 @@ public final class StatusItemController: NSObject, NSMenuDelegate {
 
     public func refresh() {
         guard let button = statusItem.button else { return }
-        if isPaused?() == true {
-            button.title = " Paused"
-            return
-        }
-        guard let meeting = nextMeeting?() else {
-            button.title = ""
-            return
-        }
-        let dt = meeting.startDate.timeIntervalSinceNow
-        let when = dt < 60 ? "now" : "in \(Self.shortCountdown(dt))"
-        button.title = " \(Self.truncate(meeting.title, to: 24)) · \(when)"
+        button.title = Self.statusTitle(
+            paused: isPaused?() == true,
+            meeting: nextMeeting?(),
+            now: Date(),
+            iconOnly: menuBarIconOnly?() == true)
+    }
+
+    /// Pure title logic, testable without a live status item. Icon-only hides
+    /// the meeting title and countdown; "Paused" still shows since it is app
+    /// state the user set, not private meeting data.
+    static func statusTitle(paused: Bool, meeting: Meeting?, now: Date, iconOnly: Bool) -> String {
+        if paused { return " Paused" }
+        if iconOnly { return "" }
+        guard let meeting else { return "" }
+        let dt = meeting.startDate.timeIntervalSince(now)
+        let when = dt < 60 ? "now" : "in \(shortCountdown(dt))"
+        return " \(truncate(meeting.title, to: 24)) · \(when)"
     }
 
     static func shortCountdown(_ t: TimeInterval) -> String {

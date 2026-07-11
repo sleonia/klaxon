@@ -67,23 +67,15 @@ public struct AlertView: View {
 
                 TimelineView(.periodic(from: .now, by: 1)) { ctx in
                     Text(countdownText(now: ctx.date))
-                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .font(.system(size: 58, weight: .heavy, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 8)
-                        .background(.white.opacity(0.15), in: Capsule())
                 }
 
                 buttons
                     .padding(.top, 12)
 
                 Spacer()
-
-                Text("esc to dismiss")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.white.opacity(0.4))
-                    .padding(.bottom, 24)
             }
         }
         .task {
@@ -127,61 +119,96 @@ public struct AlertView: View {
     }
 
     private var buttons: some View {
-        HStack(spacing: 16) {
+        // Three tiers by priority: a large primary Join, a row of numbered
+        // snoozes, then a quiet Dismiss. Every control shows its shortcut so
+        // ↵ / ⌘1–3 / esc are discoverable rather than hidden.
+        VStack(spacing: 18) {
             if let link = meeting.link {
-                Button {
-                    guard armed else { return }
-                    onJoin(meeting)
-                } label: {
-                    Label("Join \(link.serviceName)", systemImage: "video.fill")
-                        .font(.system(size: 20, weight: .bold))
-                        .padding(.horizontal, 28)
-                        .padding(.vertical, 14)
-                }
-                .buttonStyle(.plain)
-                .background(.white, in: Capsule())
-                .foregroundStyle(background.accent)
-                .keyboardShortcut(.defaultAction)
+                joinButton(link)
             }
 
             // Discrete snooze buttons rather than a Menu: one tap to snooze,
             // and no submenu that a stray click could interact with. Count
             // and durations are user-configurable (0–3 buttons).
-            ForEach(snoozeMinutes.indices, id: \.self) { i in
-                snoozeButton(minutes: snoozeMinutes[i])
+            if !snoozeMinutes.isEmpty {
+                HStack(spacing: 14) {
+                    ForEach(snoozeMinutes.indices, id: \.self) { i in
+                        snoozeButton(minutes: snoozeMinutes[i], index: i)
+                    }
+                }
             }
 
-            Button {
-                guard armed else { return }
-                onDismiss(meeting)
-            } label: {
-                Text("Dismiss")
-                    .font(.system(size: 18, weight: .semibold))
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
-            }
-            .buttonStyle(.plain)
-            .background(.white.opacity(0.15), in: Capsule())
-            .foregroundStyle(.white)
-            .keyboardShortcut(.cancelAction)
+            dismissButton
         }
         .opacity(armed ? 1 : 0.55)
         .animation(.easeIn(duration: 0.2), value: armed)
     }
 
-    private func snoozeButton(minutes: Int) -> some View {
+    private func joinButton(_ link: MeetingLink) -> some View {
+        Button {
+            guard armed else { return }
+            onJoin(meeting)
+        } label: {
+            HStack(spacing: 14) {
+                Label("Join \(link.serviceName)", systemImage: "video.fill")
+                    .font(.system(size: 24, weight: .bold))
+                keyHint("↵", tint: background.accent, fill: background.accent.opacity(0.12))
+            }
+            .padding(.horizontal, 36)
+            .padding(.vertical, 18)
+        }
+        .buttonStyle(.plain)
+        .background(.white, in: Capsule())
+        .foregroundStyle(background.accent)
+        .keyboardShortcut(.defaultAction)
+    }
+
+    private func snoozeButton(minutes: Int, index: Int) -> some View {
         Button {
             guard armed else { return }
             onSnooze(meeting, TimeInterval(minutes) * 60)
         } label: {
-            Text("Snooze \(minutes)m")
-                .font(.system(size: 18, weight: .semibold))
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
+            HStack(spacing: 8) {
+                keyHint("⌘\(index + 1)", tint: .white, fill: .white.opacity(0.22))
+                Text("Snooze \(minutes)m")
+                    .font(.system(size: 18, weight: .semibold))
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 12)
         }
         .buttonStyle(.plain)
         .background(.white.opacity(0.15), in: Capsule())
         .foregroundStyle(.white)
+        // ⌘1/⌘2/⌘3 mirror the visible badges; snooze count is capped at 3.
+        .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: .command)
+    }
+
+    private var dismissButton: some View {
+        Button {
+            guard armed else { return }
+            onDismiss(meeting)
+        } label: {
+            HStack(spacing: 8) {
+                Text("Dismiss")
+                    .font(.system(size: 16, weight: .semibold))
+                keyHint("esc", tint: .white.opacity(0.9), fill: .white.opacity(0.16))
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 8)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.white.opacity(0.8))
+        .keyboardShortcut(.cancelAction)
+    }
+
+    /// A small rounded chip showing a key's glyph beside its button.
+    private func keyHint(_ text: String, tint: Color, fill: Color) -> some View {
+        Text(text)
+            .font(.system(size: 13, weight: .bold, design: .rounded))
+            .foregroundStyle(tint)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(fill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
     }
 
     // MARK: - Formatting
@@ -191,12 +218,11 @@ public struct AlertView: View {
             .formatted(date: .omitted, time: .shortened)
     }
 
+    /// Just the time-to-start as a bare number (e.g. "1:18" or "1h 5m"), or
+    /// "Now" once the meeting has reached its start — no label, by design.
     private func countdownText(now: Date) -> String {
         let dt = meeting.startDate.timeIntervalSince(now)
-        if abs(dt) < 1 { return "Starting now" }
-        return dt > 0
-            ? "Starts in \(Self.format(dt))"
-            : "Started \(Self.format(-dt)) ago"
+        return dt >= 1 ? Self.format(dt) : "Now"
     }
 
     static func format(_ t: TimeInterval) -> String {

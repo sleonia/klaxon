@@ -21,6 +21,7 @@ public final class Preferences: ObservableObject {
         static let paused = "paused"
         static let snoozeMinutes = "snoozeMinutes"
         static let customBackgroundPath = "customBackgroundPath"
+        static let menuBarIconOnly = "menuBarIconOnly"
     }
 
     /// Overlay themeID sentinel selecting the user's custom background image.
@@ -78,6 +79,11 @@ public final class Preferences: ObservableObject {
     @Published public var customBackgroundPath: String {
         didSet { defaults.set(customBackgroundPath, forKey: Key.customBackgroundPath); changed() }
     }
+    /// Shows only the menu-bar icon, hiding the next meeting's title and
+    /// countdown. "Paused" still shows — it is app state, not private data.
+    @Published public var menuBarIconOnly: Bool {
+        didSet { defaults.set(menuBarIconOnly, forKey: Key.menuBarIconOnly); changed() }
+    }
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -92,6 +98,7 @@ public final class Preferences: ObservableObject {
         let stored = defaults.array(forKey: Key.snoozeMinutes) as? [Int]
         snoozeMinutes = Self.sanitizeSnooze(stored ?? [1, 3, 5])
         customBackgroundPath = defaults.string(forKey: Key.customBackgroundPath) ?? ""
+        menuBarIconOnly = defaults.bool(forKey: Key.menuBarIconOnly)
     }
 
     /// Clamps to at most `maxSnoozeButtons` entries, each a positive minute

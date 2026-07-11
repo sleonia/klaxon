@@ -94,6 +94,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         controller.isPaused = { [weak self] in self?.prefs.paused ?? false }
+        controller.menuBarIconOnly = { [weak self] in self?.prefs.menuBarIconOnly ?? false }
         controller.onTogglePause = { [weak self] in self?.prefs.paused.toggle() }
         controller.onTestAlert = { [weak self] in self?.showTestAlert() }
         controller.onOpenSettings = { [weak self] in self?.settingsController?.show() }
