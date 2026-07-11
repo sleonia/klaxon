@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>KLAXON — Full-screen meeting alerts for macOS</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Klaxon — the meeting alert you can't miss" />
+<meta property="og:description" content="A free, open-source, menu-bar-only macOS app that throws a full-screen alert onto every display right before your meetings start. Privacy-first, keyboard-first." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="description" content="Klaxon is a free, open-source, menu-bar-only macOS app that throws a full-screen alert onto every display right before your meetings start. Privacy-first, no account, keyboard-first." />
+
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+    window.YM_ID = 110600874;
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=110600874', 'ym');
+
+    ym(110600874, 'init', {ssr:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/110600874" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;900&family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #F4F1E9;
+    --white: #FFFFFF;
+    --ink: #0A0A0A;
+    --alarm: #FF2D1A;
+    --hair: #0A0A0A;
+    --grid: rgba(10,10,10,0.07);
+    --shadow: #0A0A0A;
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+    --display: "Archivo Black", "Archivo", sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+
+  ::selection { background: var(--alarm); color: var(--white); }
+
+  h1, h2, h3 { font-family: var(--display); font-weight: 900; line-height: 0.95; letter-spacing: -0.01em; }
+
+  a { color: inherit; }
+
+  .wrap {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ===== Keycap primitive ===== */
+  .cap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 13px;
+    padding: 12px 20px;
+    background: var(--white);
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    box-shadow: 4px 4px 0 var(--shadow);
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.08s steps(2, end), box-shadow 0.08s steps(2, end), background 0.12s;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .cap:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--shadow); }
+  .cap:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--shadow); }
+  .cap:focus-visible { outline: 3px solid var(--alarm); outline-offset: 3px; }
+  .cap--alarm { background: var(--alarm); color: var(--white); }
+  .cap--ink { background: var(--ink); color: var(--paper); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cap { transition: none; }
+  }
+
+  /* small physical key chip (like a keyboard key) */
+  .kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 11px;
+    line-height: 1;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    border-radius: 3px;
+    box-shadow: 0 2px 0 var(--ink);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .cap--alarm .kbd, .cap--ink .kbd { background: rgba(255,255,255,0.14); border-color: currentColor; color: currentColor; box-shadow: 0 2px 0 currentColor; }
+
+  /* ===== Nav ===== */
+  header.nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--paper);
+    border-bottom: 2px solid var(--ink);
+  }
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 66px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--display);
+    font-size: 22px;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    color: var(--ink);
+  }
+  .brand svg { display: block; }
+  .brand .mark {
+    width: 34px; height: 34px;
+    border: 2px solid var(--ink);
+    background: var(--alarm);
+    display: grid; place-items: center;
+    box-shadow: 3px 3px 0 var(--shadow);
+  }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .nav-links a.anchor {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    padding: 8px 12px;
+    border: 2px solid transparent;
+  }
+  .nav-links a.anchor:hover { border-color: var(--ink); }
+  .nav-links a.anchor:focus-visible { outline: 3px solid var(--alarm); outline-offset: 2px; }
+
+  @media (max-width: 780px) {
+    .nav-links a.anchor { display: none; }
+  }
+
+  /* ===== Ticker ===== */
+  .ticker {
+    background: var(--ink);
+    color: var(--paper);
+    border-bottom: 2px solid var(--ink);
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .ticker-track {
+    display: inline-block;
+    padding: 7px 0;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    animation: ticker 26s linear infinite;
+  }
+  .ticker-track span { padding: 0 22px; }
+  .ticker-track .dot { color: var(--alarm); }
+  @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) {
+    .ticker-track { animation: none; padding-left: 22px; }
+  }
+
+  /* ===== Section scaffolding ===== */
+  section { border-bottom: 2px solid var(--ink); }
+  .sec-num {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: var(--alarm);
+    text-transform: uppercase;
+  }
+  .sec-label {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 2px dashed var(--ink);
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+  }
+
+  /* ===== Hero ===== */
+  .hero { padding: 0; }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+  }
+  .hero-left {
+    padding: 56px 48px 56px 0;
+    border-right: 2px solid var(--ink);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .hero-right {
+    padding: 40px 0 40px 48px;
+    display: flex;
+    align-items: center;
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    border: 2px solid var(--ink);
+    padding: 6px 12px;
+    background: var(--white);
+    box-shadow: 3px 3px 0 var(--shadow);
+    align-self: flex-start;
+  }
+  .eyebrow .blink { width: 9px; height: 9px; background: var(--alarm); display: inline-block; }
+  @keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0.15} }
+  .eyebrow .blink { animation: blink 1.1s steps(1) infinite; }
+  @media (prefers-reduced-motion: reduce){ .eyebrow .blink{ animation:none; } }
+
+  h1.hero-title {
+    font-size: clamp(44px, 6.4vw, 92px);
+    text-transform: uppercase;
+    margin-bottom: 22px;
+  }
+  h1.hero-title .red { color: var(--alarm); }
+  .hero-sub {
+    font-size: 16px;
+    line-height: 1.65;
+    max-width: 46ch;
+    margin-bottom: 32px;
+    color: var(--ink);
+  }
+  .hero-sub b { font-weight: 700; }
+  .hero-ctas {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+  }
+  .trust {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .trust .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 7px 11px;
+    border: 2px solid var(--ink);
+    background: var(--paper);
+  }
+  .trust .chip svg { display:block; }
+
+  /* ===== Terminal window w/ alert overlay ===== */
+  .terminal {
+    width: 100%;
+    border: 2px solid var(--ink);
+    background: var(--white);
+    box-shadow: 10px 10px 0 var(--shadow);
+  }
+  .term-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    border-bottom: 2px solid var(--ink);
+    background: var(--paper);
+  }
+  .term-bar .lights { display: flex; gap: 7px; }
+  .term-bar .lights i {
+    width: 12px; height: 12px;
+    border: 1.5px solid var(--ink);
+    display: block;
+    border-radius: 50%;
+  }
+  .term-bar .lights i:nth-child(1){ background: var(--alarm); }
+  .term-bar .lights i:nth-child(2){ background: var(--paper); }
+  .term-bar .lights i:nth-child(3){ background: var(--ink); }
+  .term-bar .title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-left: 6px;
+  }
+  .term-bar .live {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--alarm);
+    display: inline-flex; align-items:center; gap:6px;
+  }
+  .term-bar .live .rec { width:8px;height:8px;background:var(--alarm);border-radius:50%; }
+
+  .alert {
+    background:
+      repeating-linear-gradient(45deg, rgba(10,10,10,0.03) 0 2px, transparent 2px 9px),
+      linear-gradient(160deg, #FF6A4D 0%, var(--alarm) 55%, #C21200 100%);
+    padding: 40px 28px 34px;
+    text-align: center;
+    color: var(--white);
+    position: relative;
+    overflow: hidden;
+  }
+  .alert::before, .alert::after {
+    content: "";
+    position: absolute;
+    left: 14px; right: 14px;
+    height: 1px;
+    background: rgba(255,255,255,0.28);
+  }
+  .alert::before { top: 14px; }
+  .alert::after { bottom: 14px; }
+
+  .cal-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    background: rgba(0,0,0,0.28);
+    border: 1.5px solid rgba(255,255,255,0.55);
+    border-radius: 999px;
+    margin-bottom: 22px;
+    color: var(--white);
+  }
+  .cal-pill .cdot { width: 9px; height: 9px; background: #7CFF6B; border-radius: 50%; box-shadow: 0 0 0 1px rgba(0,0,0,0.35); }
+
+  .alert .m-title {
+    font-family: var(--display);
+    font-size: clamp(34px, 5.5vw, 52px);
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    line-height: 0.95;
+    margin-bottom: 10px;
+    text-shadow: 3px 3px 0 rgba(0,0,0,0.22);
+  }
+  .alert .m-time {
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    color: rgba(255,255,255,0.9);
+    margin-bottom: 18px;
+  }
+  .alert .m-count {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: clamp(52px, 9vw, 82px);
+    line-height: 1;
+    letter-spacing: 0.02em;
+    margin-bottom: 26px;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 4px 4px 0 rgba(0,0,0,0.2);
+  }
+
+  .join-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--white);
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    box-shadow: 5px 5px 0 rgba(0,0,0,0.45);
+    padding: 14px 20px;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-radius: 999px;
+    cursor: pointer;
+    text-decoration: none;
+    margin-bottom: 22px;
+    transition: transform 0.08s steps(2), box-shadow 0.08s steps(2);
+  }
+  .join-btn:hover { transform: translate(2px,2px); box-shadow: 3px 3px 0 rgba(0,0,0,0.45); }
+  .join-btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  .join-btn .ret {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 12px;
+    min-width: 26px; height: 24px;
+    display: inline-grid; place-items: center;
+    padding: 0 6px;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    border-radius: 4px;
+    box-shadow: 0 2px 0 var(--ink);
+  }
+  @media (prefers-reduced-motion: reduce){ .join-btn { transition:none; } }
+
+  .snooze-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .snooze {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,0,0,0.24);
+    border: 1.5px solid rgba(255,255,255,0.4);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--white);
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .snooze:hover { background: rgba(0,0,0,0.42); }
+  .snooze:focus-visible { outline: 2px solid var(--white); outline-offset: 2px; }
+  .snooze .k {
+    font-size: 11px; font-weight: 700;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.55);
+    border-radius: 4px;
+    padding: 2px 6px;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.3);
+  }
+  .dismiss {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.85);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .dismiss:focus-visible { outline: 2px solid var(--white); outline-offset: 3px; }
+  .dismiss .k {
+    font-size: 10px;
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 4px;
+    padding: 2px 6px;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.3);
+  }
+
+  /* ===== Problem strip ===== */
+  .problem {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .problem .wrap { padding: 46px 24px; }
+  .problem-head {
+    display:flex; align-items:baseline; gap:14px; margin-bottom:22px; flex-wrap:wrap;
+  }
+  .problem-head .sec-num { color: var(--alarm); }
+  .problem-head .sec-label { color: var(--paper); }
+  .problem p {
+    font-family: var(--display);
+    font-size: clamp(24px, 3.6vw, 40px);
+    line-height: 1.08;
+    text-transform: uppercase;
+    max-width: 24ch;
+  }
+  .problem p .red { color: var(--alarm); }
+  .problem .sub {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 400;
+    text-transform: none;
+    line-height: 1.6;
+    max-width: 60ch;
+    margin-top: 22px;
+    color: rgba(244,241,233,0.82);
+  }
+
+  /* ===== Features ===== */
+  .features .wrap { padding: 52px 24px 56px; }
+  .feat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border: 2px solid var(--ink);
+    background: var(--ink);
+  }
+  .feat {
+    background: var(--paper);
+    padding: 28px 24px 30px;
+    border-right: 2px solid var(--ink);
+    border-bottom: 2px solid var(--ink);
+    position: relative;
+    transition: background 0.14s, transform 0.1s;
+  }
+  .feat:nth-child(3n){ border-right: none; }
+  .feat:nth-child(n+4){ }
+  .feat:nth-last-child(-n+3){ border-bottom: none; }
+  .feat:hover { background: var(--white); }
+  .feat .fnum {
+    position: absolute;
+    top: 14px; right: 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--alarm);
+    letter-spacing: 0.1em;
+  }
+  .feat .ficon {
+    width: 44px; height: 44px;
+    border: 2px solid var(--ink);
+    background: var(--white);
+    display: grid; place-items: center;
+    box-shadow: 3px 3px 0 var(--shadow);
+    margin-bottom: 20px;
+  }
+  .feat:hover .ficon { background: var(--alarm); }
+  .feat:hover .ficon svg { stroke: var(--white); }
+  .feat h3 {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 10px;
+  }
+  .feat p {
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: rgba(10,10,10,0.78);
+  }
+
+  @media (max-width: 900px){
+    .feat-grid { grid-template-columns: repeat(2,1fr); }
+    .feat:nth-child(3n){ border-right: 2px solid var(--ink); }
+    .feat:nth-child(2n){ border-right: none; }
+    .feat:nth-last-child(-n+3){ border-bottom: 2px solid var(--ink); }
+    .feat:nth-last-child(-n+2){ border-bottom: none; }
+  }
+  @media (max-width: 560px){
+    .feat-grid { grid-template-columns: 1fr; }
+    .feat, .feat:nth-child(3n), .feat:nth-child(2n){ border-right: none; border-bottom: 2px solid var(--ink); }
+    .feat:last-child{ border-bottom: none; }
+  }
+
+  /* ===== Themes strip ===== */
+  .themes .wrap { padding: 52px 24px 56px; }
+  .theme-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
+  }
+  .swatch {
+    border: 2px solid var(--ink);
+    box-shadow: 5px 5px 0 var(--shadow);
+    overflow: hidden;
+    transition: transform 0.1s steps(2), box-shadow 0.1s steps(2);
+  }
+  .swatch:hover { transform: translate(2px,2px); box-shadow: 3px 3px 0 var(--shadow); }
+  .swatch .grad { height: 92px; }
+  .swatch .name {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 8px 10px;
+    border-top: 2px solid var(--ink);
+    background: var(--paper);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .swatch .name .no { color: var(--alarm); }
+  @media (prefers-reduced-motion: reduce){ .swatch{ transition:none; } }
+  @media (max-width: 900px){ .theme-grid { grid-template-columns: repeat(3,1fr); } }
+  @media (max-width: 480px){ .theme-grid { grid-template-columns: repeat(2,1fr); } }
+
+  /* ===== Final CTA ===== */
+  .cta-band {
+    background: var(--alarm);
+    color: var(--white);
+    border-bottom: 2px solid var(--ink);
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-band::before {
+    content:"";
+    position:absolute; inset:0;
+    background: repeating-linear-gradient(45deg, rgba(0,0,0,0.06) 0 3px, transparent 3px 14px);
+    pointer-events:none;
+  }
+  .cta-band .wrap { padding: 60px 24px; position: relative; text-align: center; }
+  .cta-band h2 {
+    font-size: clamp(34px, 6vw, 66px);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    text-shadow: 4px 4px 0 rgba(0,0,0,0.28);
+  }
+  .cta-band .press {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    margin-bottom: 28px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .cta-band .press .kbd { background: rgba(255,255,255,0.15); border-color: var(--white); color: var(--white); box-shadow: 0 2px 0 rgba(0,0,0,0.3); }
+  .cta-band .ctas { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-bottom: 20px; }
+  .cta-band .meta {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .cta-band .hint {
+    margin-top: 14px;
+    font-size: 12px;
+    background: var(--ink);
+    color: var(--paper);
+    display: inline-block;
+    padding: 8px 14px;
+    border: 2px solid var(--ink);
+    letter-spacing: 0.02em;
+    text-transform: none;
+  }
+  .cta-band .hint code { color: var(--alarm); font-weight: 700; }
+
+  /* ===== Footer ===== */
+  footer.foot {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  footer.foot .wrap { padding: 44px 24px 40px; }
+  .foot-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+    flex-wrap: wrap;
+    padding-bottom: 26px;
+    border-bottom: 1px solid rgba(244,241,233,0.25);
+  }
+  .foot-brand {
+    display:flex; align-items:center; gap:12px;
+    font-family: var(--display); font-size: 20px; letter-spacing: 0.02em;
+  }
+  .foot-brand .mark { width:30px;height:30px;border:2px solid var(--paper);background:var(--alarm);display:grid;place-items:center; }
+  .foot-links { display:flex; gap:8px; flex-wrap:wrap; }
+  .foot-links a {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    border: 2px solid var(--paper);
+    padding: 8px 12px;
+    transition: background 0.12s, color 0.12s;
+  }
+  .foot-links a:hover { background: var(--paper); color: var(--ink); }
+  .foot-links a:focus-visible { outline: 3px solid var(--alarm); outline-offset: 2px; }
+  .foot-bottom {
+    display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    padding-top: 22px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: rgba(244,241,233,0.7);
+    text-transform: uppercase;
+  }
+  .foot-bottom .tag { color: var(--alarm); }
+
+  /* ===== Reveal animation ===== */
+  .reveal { opacity: 0; transform: translateY(18px); }
+  body.loaded .reveal {
+    animation: rise 0.6s cubic-bezier(0.2,0.7,0.2,1) forwards;
+    animation-delay: var(--d, 0s);
+  }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce){
+    .reveal { opacity: 1; transform: none; }
+    body.loaded .reveal { animation: none; }
+  }
+
+  @media (max-width: 900px){
+    .hero-grid { grid-template-columns: 1fr; }
+    .hero-left { border-right: none; border-bottom: 2px solid var(--ink); padding: 44px 0 40px; }
+    .hero-right { padding: 40px 0; }
+  }
+
+  /* ===== Brand: horn = sound button, wordmark = author link ===== */
+  button.mark { appearance: none; -webkit-appearance: none; font: inherit; padding: 0; cursor: pointer; }
+  .brand .mark { transition: transform .08s steps(2), box-shadow .08s steps(2); }
+  .brand .mark:hover { transform: translate(1px, 1px); box-shadow: 2px 2px 0 var(--shadow); }
+  .brand .mark:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--shadow); }
+  .foot-brand .mark { cursor: pointer; }
+  .foot-brand .mark:active { transform: translate(2px, 2px); }
+  .brand .mark:focus-visible, .foot-brand .mark:focus-visible { outline: 3px solid var(--alarm); outline-offset: 3px; }
+  .brand-name, .foot-brand-name { text-decoration: none; color: inherit; }
+  .brand-name:hover, .foot-brand-name:hover { color: var(--alarm); }
+  .brand-name:focus-visible, .foot-brand-name:focus-visible { outline: 3px solid var(--alarm); outline-offset: 3px; }
+  .foot-credit { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+  .foot-credit:hover { color: var(--alarm); }
+  @media (prefers-reduced-motion: reduce){ .brand .mark { transition: none; } }
+
+  /* ===== Footer privacy note ===== */
+  .foot-privacy { margin-top: 22px; border-top: 1px solid rgba(244,241,233,0.25); padding-top: 18px; }
+  .foot-privacy summary { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; color: var(--paper); list-style: none; display: inline-flex; align-items: center; gap: 8px; }
+  .foot-privacy summary::-webkit-details-marker { display: none; }
+  .foot-privacy summary::before { content: "+"; color: var(--alarm); font-weight: 700; }
+  .foot-privacy[open] summary::before { content: "\2013"; }
+  .foot-privacy summary:focus-visible { outline: 3px solid var(--alarm); outline-offset: 3px; }
+  .foot-privacy p { font-size: 12px; line-height: 1.6; color: rgba(244,241,233,0.72); max-width: 70ch; margin-top: 12px; }
+  .foot-privacy a { color: var(--paper); text-decoration: underline; text-underline-offset: 2px; }
+  .foot-privacy a:hover { color: var(--alarm); }
+
+  /* ===== Cookie notice (non-blocking) ===== */
+  .cookie {
+    position: fixed;
+    left: 20px; bottom: 20px;
+    z-index: 200;
+    max-width: 380px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    box-shadow: 6px 6px 0 var(--shadow);
+    padding: 14px 16px;
+  }
+  .cookie[hidden] { display: none; }
+  .cookie-txt { font-size: 12px; line-height: 1.5; margin: 0; }
+  .cookie-txt b { font-weight: 700; }
+  .cookie-link { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+  .cookie-link:hover { color: var(--alarm); }
+  .cookie #cookie-ok { flex-shrink: 0; padding: 9px 14px; font-size: 12px; }
+  @media (max-width: 560px) {
+    .cookie { left: 12px; right: 12px; bottom: 12px; max-width: none; flex-direction: column; align-items: stretch; }
+    .cookie #cookie-ok { align-self: flex-end; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<header class="nav">
+  <div class="wrap nav-inner">
+    <div class="brand">
+      <button class="mark" type="button" data-sound="klaxon" data-goal="play_sound" title="Play the Klaxon sound" aria-label="Play the Klaxon alert sound">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="square" aria-hidden="true">
+          <path d="M4 14 L13 6 V20 L4 16 Z"/><path d="M17 9 C19 11 19 13 17 15"/><path d="M20 6 C23 9 23 15 20 18"/>
+        </svg>
+      </button>
+      <a class="brand-name" href="https://sleonia.tech" target="_blank" rel="noopener noreferrer" data-goal="author_link">KLAXON</a>
+    </div>
+    <nav class="nav-links" aria-label="Primary">
+      <a class="anchor" href="#features">FEATURES</a>
+      <a class="anchor" href="#themes">THEMES</a>
+      <a class="anchor" href="https://github.com/sleonia/klaxon" data-goal="github">SOURCE</a>
+      <a class="cap cap--alarm" href="https://github.com/sleonia/klaxon/releases/latest" data-goal="download_nav">
+        DOWNLOAD
+        <span class="kbd" aria-hidden="true">↓</span>
+      </a>
+    </nav>
+  </div>
+</header>
+
+<!-- TICKER -->
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    <span class="dot">///</span><span>FULL-SCREEN ALERTS ON EVERY DISPLAY</span><span class="dot">///</span><span>PRESS ↵ TO JOIN</span><span class="dot">///</span><span>FREE &amp; OPEN SOURCE — MIT</span><span class="dot">///</span><span>NO ACCOUNT · NO TELEMETRY</span><span class="dot">///</span><span>MENU-BAR NATIVE · NO DOCK ICON</span><span class="dot">///</span>
+    <span class="dot">///</span><span>FULL-SCREEN ALERTS ON EVERY DISPLAY</span><span class="dot">///</span><span>PRESS ↵ TO JOIN</span><span class="dot">///</span><span>FREE &amp; OPEN SOURCE — MIT</span><span class="dot">///</span><span>NO ACCOUNT · NO TELEMETRY</span><span class="dot">///</span><span>MENU-BAR NATIVE · NO DOCK ICON</span><span class="dot">///</span>
+  </div>
+</div>
+
+<main id="top">
+
+<!-- HERO -->
+<section class="hero" aria-labelledby="hero-title">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="hero-left">
+        <span class="eyebrow reveal" style="--d:.05s"><span class="blink" aria-hidden="true"></span>MENU-BAR APP · macOS 14+</span>
+        <h1 id="hero-title" class="hero-title reveal" style="--d:.12s">YOU WILL <span class="red">NOT</span> MISS THE MEETING.</h1>
+        <p class="hero-sub reveal" style="--d:.19s">Klaxon throws a <b>full-screen alert onto every display</b> right before your calendar meetings start — impossible to ignore, above every app and Space. When there's a video link, <b>one press takes you into the call.</b></p>
+        <div class="hero-ctas reveal" style="--d:.26s">
+          <a class="cap cap--alarm" href="https://github.com/sleonia/klaxon/releases/latest" data-goal="download_hero">
+            DOWNLOAD FOR macOS
+            <span class="kbd" aria-hidden="true">↵</span>
+          </a>
+          <a class="cap" href="https://github.com/sleonia/klaxon" data-goal="github">
+            VIEW ON GITHUB
+          </a>
+        </div>
+        <div class="trust reveal" style="--d:.33s">
+          <span class="chip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+            FREE &amp; OPEN SOURCE
+          </span>
+          <span class="chip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg>
+            PRIVACY-FIRST
+          </span>
+          <span class="chip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M3 5h18v11H3z"/><path d="M8 20h8"/></svg>
+            macOS 14+
+          </span>
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <div class="terminal reveal" style="--d:.4s" role="img" aria-label="Klaxon full-screen alert: Design Review on the Work calendar, 15:44 to 16:14, starting in two minutes, with a Join Video Call button.">
+          <div class="term-bar">
+            <div class="lights" aria-hidden="true"><i></i><i></i><i></i></div>
+            <span class="title">KLAXON.ALERT — DISPLAY 1/2</span>
+            <span class="live"><span class="rec"></span>LIVE</span>
+          </div>
+          <div class="alert">
+            <div class="cal-pill"><span class="cdot" aria-hidden="true"></span>WORK</div>
+            <div class="m-title">DESIGN REVIEW</div>
+            <div class="m-time">15:44 – 16:14</div>
+            <div class="m-count" id="countdown" aria-live="polite">2:00</div>
+            <a class="join-btn" href="https://github.com/sleonia/klaxon/releases/latest" data-goal="join_demo" aria-label="Join video call, press return">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M3 7h11v10H3z"/><path d="M14 10l6-3v10l-6-3"/></svg>
+              JOIN VIDEO CALL
+              <span class="ret" aria-hidden="true">↵</span>
+            </a>
+            <div class="snooze-row">
+              <button class="snooze" type="button"><span class="k">⌘1</span>SNOOZE 1M</button>
+              <button class="snooze" type="button"><span class="k">⌘2</span>SNOOZE 3M</button>
+              <button class="snooze" type="button"><span class="k">⌘3</span>SNOOZE 5M</button>
+            </div>
+            <button class="dismiss" type="button">DISMISS <span class="k">ESC</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section class="problem" aria-labelledby="problem-title">
+  <div class="wrap">
+    <div class="problem-head">
+      <span class="sec-num">[01]</span>
+      <span class="sec-label">// THE PROBLEM</span>
+    </div>
+    <p id="problem-title">TINY NOTIFICATIONS <span class="red">VANISH</span> BEFORE YOU LOOK UP.</p>
+    <p class="sub">You're heads-down in deep work. You context-switch all day. Time blindness is real — and a banner that slides away in four seconds was never going to save you. Klaxon takes over the entire screen, on every display, so the alert is the one thing you cannot scroll past.</p>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features" aria-labelledby="features-title">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num">[02]</span>
+      <span class="sec-label">// WHAT IT DOES</span>
+      <h2 id="features-title" style="font-size:clamp(26px,3.4vw,40px);text-transform:uppercase;margin-left:auto;">BUILT LIKE A TOOL.</h2>
+    </div>
+    <div class="feat-grid reveal" style="--d:.1s">
+      <article class="feat">
+        <span class="fnum">01</span>
+        <span class="ficon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M3 4h18v13H3z"/><path d="M3 8h18"/></svg></span>
+        <h3>FULL-SCREEN ALERTS</h3>
+        <p>Every connected display goes full-screen at your lead time — at start, or 1 / 2 / 5 / 10 / 15 minutes before.</p>
+      </article>
+      <article class="feat">
+        <span class="fnum">02</span>
+        <span class="ficon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M3 6h11v12H3z"/><path d="M14 10l6-3v10l-6-3"/></svg></span>
+        <h3>ONE-CLICK JOIN</h3>
+        <p>Detects meeting links for 30+ services — Zoom, Google Meet, Teams, Webex, Whereby, Jitsi — from URL, location, or notes.</p>
+      </article>
+      <article class="feat">
+        <span class="fnum">03</span>
+        <span class="ficon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M3 6h18v12H3z"/><path d="M6 10h.01M9 10h.01M12 10h.01M15 10h.01M18 10h.01M8 14h8"/></svg></span>
+        <h3>KEYBOARD-FIRST</h3>
+        <p>Return joins. ⌘1/2/3 snooze. Esc dismisses. Every button shows its shortcut — hands never leave the keys.</p>
+      </article>
+      <article class="feat">
+        <span class="fnum">04</span>
+        <span class="ficon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span>
+        <h3>CONFIGURABLE SNOOZE</h3>
+        <p>Zero to three snooze buttons of your choosing (default 1 / 3 / 5 min), plus a plain Dismiss. Your call.</p>
+      </article>
+      <article class="feat">
+        <span class="fnum">05</span>
+        <span class="ficon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M4 4l16 16M20 4L4 20"/></svg></span>
+        <h3>THEMES &amp; SOUNDS</h3>
+        <p>Ten gradient themes, a Random option, or your own image. Pair it with any macOS system sound — or silence.</p>
+      </article>
+      <article class="feat">
+        <span class="fnum">06</span>
+        <span class="ficon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0A0A" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M4 4h16v14H4z"/><path d="M8 21h8M9 8l3 3 3-3"/></svg></span>
+        <h3>CALENDAR-AWARE</h3>
+        <p>Works with every account already in macOS Calendar — iCloud, Google, Microsoft/Exchange. Pick which calendars count.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- THEMES -->
+<section class="themes" id="themes" aria-labelledby="themes-title">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num">[03]</span>
+      <span class="sec-label">// THEMES</span>
+      <h2 id="themes-title" style="font-size:clamp(26px,3.4vw,40px);text-transform:uppercase;margin-left:auto;">PICK YOUR ALARM.</h2>
+    </div>
+    <div class="theme-grid reveal" style="--d:.1s">
+      <div class="swatch"><div class="grad" style="background:linear-gradient(150deg,#FF3B1E,#FF9130);"></div><div class="name">CLASSIC <span class="no">01</span></div></div>
+      <div class="swatch"><div class="grad" style="background:linear-gradient(150deg,#1E7BFF,#12D9C0);"></div><div class="name">OCEAN <span class="no">02</span></div></div>
+      <div class="swatch"><div class="grad" style="background:linear-gradient(150deg,#7A2BFF,#FF2DB0);"></div><div class="name">NEON <span class="no">03</span></div></div>
+      <div class="swatch"><div class="grad" style="background:linear-gradient(150deg,#0F1F14,#2FBF5A);"></div><div class="name">FOREST <span class="no">04</span></div></div>
+      <div class="swatch"><div class="grad" style="background:linear-gradient(150deg,#1A1A1A,#4A4A4A);"></div><div class="name">GRAPHITE <span class="no">05</span></div></div>
+      <div class="swatch"><div class="grad" style="background:linear-gradient(150deg,#FF7AB0,#FFC46B);"></div><div class="name">SUNSET <span class="no">06</span></div></div>
+      <div class="swatch"><div class="grad" style="background:linear-gradient(150deg,#101830,#3A5BFF);"></div><div class="name">MIDNIGHT <span class="no">07</span></div></div>
+      <div class="swatch"><div class="grad" style="background:linear-gradient(150deg,#B8860B,#FFD966);"></div><div class="name">AMBER <span class="no">08</span></div></div>
+      <div class="swatch"><div class="grad" style="background:linear-gradient(150deg,#0AA5A5,#84E9C8);"></div><div class="name">MINT <span class="no">09</span></div></div>
+      <div class="swatch"><div class="grad" style="background:linear-gradient(150deg,#7A0016,#FF2D1A);"></div><div class="name">EMBER <span class="no">10</span></div></div>
+      <div class="swatch"><div class="grad" style="background:conic-gradient(#FF3B1E,#1E7BFF,#2FBF5A,#FFD966,#FF3B1E);"></div><div class="name">RANDOM <span class="no">?</span></div></div>
+      <div class="swatch"><div class="grad" style="background:repeating-linear-gradient(45deg,#0A0A0A 0 8px,#F4F1E9 8px 16px);"></div><div class="name">CUSTOM <span class="no">IMG</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="cta-band" aria-labelledby="cta-title">
+  <div class="wrap">
+    <h2 id="cta-title" class="reveal" style="--d:.05s">PRESS <span class="kbd" aria-hidden="true" style="font-size:22px;height:40px;min-width:44px;vertical-align:middle;">↵</span> TO JOIN.</h2>
+    <div class="press reveal" style="--d:.12s">DOWNLOAD IT ONCE. NEVER SPRINT TO A CALL AGAIN.</div>
+    <div class="ctas reveal" style="--d:.18s">
+      <a class="cap cap--ink" href="https://github.com/sleonia/klaxon/releases/latest" data-goal="download_cta">
+        DOWNLOAD KLAXON
+        <span class="kbd" aria-hidden="true">↓</span>
+      </a>
+      <a class="cap" href="https://github.com/sleonia/klaxon" data-goal="github">VIEW SOURCE</a>
+    </div>
+    <div class="meta reveal" style="--d:.24s">macOS 14+ · FREE · OPEN SOURCE</div>
+    <div class="hint reveal" style="--d:.3s">First launch on a downloaded copy: <code>right-click → Open</code> once to get past Gatekeeper.</div>
+  </div>
+</section>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <button class="mark" type="button" data-sound="klaxon" data-goal="play_sound" title="Play the Klaxon sound" aria-label="Play the Klaxon alert sound">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M4 14 L13 6 V20 L4 16 Z"/><path d="M17 9 C19 11 19 13 17 15"/><path d="M20 6 C23 9 23 15 20 18"/></svg>
+        </button>
+        <a class="foot-brand-name" href="https://sleonia.tech" target="_blank" rel="noopener noreferrer" data-goal="author_link">KLAXON</a>
+      </div>
+      <nav class="foot-links" aria-label="Footer">
+        <a href="https://github.com/sleonia/klaxon">GITHUB</a>
+        <a href="https://github.com/sleonia/klaxon/releases/latest">RELEASES</a>
+        <a href="https://github.com/sleonia/klaxon/blob/main/LICENSE">LICENSE — MIT</a>
+      </nav>
+    </div>
+    <details id="privacy" class="foot-privacy">
+      <summary>PRIVACY &amp; COOKIES</summary>
+      <p>This website uses <a href="https://yandex.com/support/metrica/" target="_blank" rel="noopener noreferrer">Yandex&nbsp;Metrika</a> to count visits and clicks. It sets analytics cookies and a random visitor ID — no session recording, no personal data collected, nothing sold. The Klaxon <b>app</b> itself sends no telemetry: it reads your calendar locally and nothing ever leaves your Mac.</p>
+    </details>
+    <div class="foot-bottom">
+      <span>MIT © 2026 <a class="foot-credit" href="https://sleonia.tech" target="_blank" rel="noopener noreferrer" data-goal="author_link">SLEONIA</a></span>
+      <span class="tag">// YOU WILL NOT MISS THE MEETING.</span>
+    </div>
+  </div>
+</footer>
+
+<!-- COOKIE NOTICE (non-blocking) -->
+<div class="cookie" id="cookie-notice" role="region" aria-label="Cookie notice" hidden>
+  <p class="cookie-txt">This site uses <b>Yandex Metrika</b> cookies to count visits &amp; clicks — no session recording. <a href="#privacy" class="cookie-link">Details</a>.</p>
+  <button class="cap" type="button" id="cookie-ok">GOT IT <span class="kbd" aria-hidden="true">✕</span></button>
+</div>
+
+<script>
+  (function () {
+    document.body.classList.add('loaded');
+
+    var el = document.getElementById('countdown');
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!el || reduce) return;
+
+    var total = 120; // 2:00
+    function render(s) {
+      if (s <= 0) { el.textContent = 'NOW'; return; }
+      var m = Math.floor(s / 60);
+      var sec = s % 60;
+      el.textContent = m + ':' + (sec < 10 ? '0' + sec : sec);
+    }
+
+    var t = total;
+    render(t);
+    var iv = setInterval(function () {
+      t -= 1;
+      if (t < 0) {
+        render(0);
+        clearInterval(iv);
+        setTimeout(function () {
+          t = total;
+          var back = setInterval(function () {
+            render(t);
+            if (t <= 0) { clearInterval(back); startAgain(); }
+            t -= 1;
+          }, 12);
+        }, 2200);
+        return;
+      }
+      render(t);
+    }, 1000);
+
+    function startAgain() {
+      t = total;
+      render(t);
+      iv = setInterval(function () {
+        t -= 1;
+        if (t < 0) { render(0); clearInterval(iv); return; }
+        render(t);
+      }, 1000);
+    }
+  })();
+</script>
+
+<script>
+  /* Yandex.Metrika goal tracking + Klaxon alert sound (self-contained) */
+  (function () {
+    var YM_ID = window.YM_ID;
+    function goal(name) {
+      if (name && window.ym && YM_ID) { try { ym(YM_ID, 'reachGoal', name); } catch (e) {} }
+    }
+    document.addEventListener('click', function (e) {
+      var t = e.target.closest && e.target.closest('[data-goal]');
+      if (t) goal(t.getAttribute('data-goal'));
+    }, true);
+
+    var actx = null;
+    function playKlaxon() {
+      try {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        actx = actx || new AC();
+        if (actx.state === 'suspended') actx.resume();
+        var now = actx.currentTime;
+        var master = actx.createGain();
+        master.gain.value = 0.5;
+        master.connect(actx.destination);
+        var lp = actx.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 2400;
+        lp.connect(master);
+        var notes = [
+          { f: 392, t: 0.00, d: 0.15 },
+          { f: 523, t: 0.15, d: 0.15 },
+          { f: 392, t: 0.32, d: 0.22 }
+        ];
+        notes.forEach(function (n) {
+          var o = actx.createOscillator();
+          o.type = 'sawtooth';
+          o.frequency.value = n.f;
+          var g = actx.createGain();
+          o.connect(g);
+          g.connect(lp);
+          var s = now + n.t;
+          g.gain.setValueAtTime(0.0001, s);
+          g.gain.exponentialRampToValueAtTime(0.3, s + 0.012);
+          g.gain.exponentialRampToValueAtTime(0.0001, s + n.d);
+          o.start(s);
+          o.stop(s + n.d + 0.03);
+        });
+      } catch (e) {}
+    }
+
+    Array.prototype.forEach.call(document.querySelectorAll('[data-sound="klaxon"]'), function (b) {
+      b.addEventListener('click', function (ev) { ev.preventDefault(); playKlaxon(); });
+    });
+
+    // --- Cookie notice (informational, non-blocking) ---
+    var notice = document.getElementById('cookie-notice');
+    var ok = document.getElementById('cookie-ok');
+    if (notice && ok) {
+      var KEY = 'klaxon_cookie_ack';
+      var acked = false;
+      try { acked = localStorage.getItem(KEY) === '1'; } catch (e) {}
+      if (!acked) notice.hidden = false;
+      ok.addEventListener('click', function () {
+        notice.hidden = true;
+        try { localStorage.setItem(KEY, '1'); } catch (e) {}
+      });
+      var link = notice.querySelector('.cookie-link');
+      var privacy = document.getElementById('privacy');
+      if (link && privacy) link.addEventListener('click', function () { privacy.open = true; });
+    }
+  })();
+</script>
+</body>
+</html>
