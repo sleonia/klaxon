@@ -4,6 +4,8 @@
 
 **Unmissable full-screen meeting alerts for macOS.**
 
+[![Download Klaxon](https://img.shields.io/badge/%E2%AC%87%EF%B8%8E%20Download-Klaxon.dmg-cc2936?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/sleonia/klaxon/releases/latest/download/Klaxon.dmg)
+
 Klaxon is a lightweight menu-bar app that throws a full-screen alert onto every
 display right before your calendar meetings start — so you actually notice them.
 When the meeting has a video link, one press takes you straight into the call.
@@ -82,34 +84,26 @@ Open **Settings…** from the menu-bar icon (or press **⌘,**). It has two tabs
 
 Requires **macOS 14 (Sonoma) or later**.
 
-### Homebrew
-
-```sh
-brew install --cask sleonia/tap/klaxon
-```
-
-On Homebrew 6.0+ you'll confirm a one-time trust prompt for the tap. (The bare
-`brew install --cask klaxon` won't find it — the tap name is required.)
-
 ### Download
 
-Grab the latest `Klaxon-<version>.dmg` from the
-[**Releases**](https://github.com/sleonia/klaxon/releases/latest) page, open it,
-and drag **Klaxon** into **Applications**.
+[**⬇︎ Download Klaxon.dmg**](https://github.com/sleonia/klaxon/releases/latest/download/Klaxon.dmg)
+— always the latest version. (Older builds live on the
+[Releases](https://github.com/sleonia/klaxon/releases) page.) Open the DMG and
+drag **Klaxon** into **Applications**.
 
-### First launch (either method)
+### First launch
 
 Klaxon is *ad-hoc* signed but **not notarized** — it isn't in Apple's paid
-Developer Program. So the first time you open a downloaded or brew-installed
-copy, macOS Gatekeeper blocks it ("cannot be opened because the developer cannot
-be verified"). Get past it once with **right-click → Open**, then **Open** in the
+Developer Program. So the first time you open a downloaded copy, macOS
+Gatekeeper blocks it ("cannot be opened because the developer cannot be
+verified"). Get past it once with **right-click → Open**, then **Open** in the
 dialog — or run:
 
 ```sh
 xattr -dr com.apple.quarantine /Applications/Klaxon.app
 ```
 
-It launches normally after that. (`brew install` prints this reminder too.)
+It launches normally after that.
 
 ### Build from source
 

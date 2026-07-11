@@ -39,16 +39,19 @@ release job needs no secrets.
 
 - `./Scripts/make-dmg.sh` (or `VERSION=1.2.0 ./Scripts/make-dmg.sh`; default reads
   `CFBundleShortVersionString` from `Resources/Info.plist`) builds + ad-hoc-signs
-  the app and writes `build/Klaxon-<version>.dmg`, printing its SHA-256 (a Homebrew
-  cask needs that hash).
+  the app and writes `build/Klaxon-<version>.dmg`, printing its SHA-256.
 - To cut a release: bump the version in `Resources/Info.plist`, then:
   ```sh
   ./Scripts/make-dmg.sh
-  gh release create v<version> build/Klaxon-<version>.dmg --title "Klaxon v<version>" --notes "…"
+  cp build/Klaxon-<version>.dmg build/Klaxon.dmg
+  gh release create v<version> build/Klaxon-<version>.dmg build/Klaxon.dmg --title "Klaxon v<version>" --notes "…"
   ```
+- **Every release must also attach the unversioned `Klaxon.dmg` copy** — the
+  download buttons in both READMEs and on the landing page point at the stable
+  URL `…/releases/latest/download/Klaxon.dmg`, which only resolves if the latest
+  release has an asset with exactly that name.
 - The DMG is **never committed to git** — it exists only as a Release asset.
-  Humans download `/releases/latest`; a Homebrew cask pins the versioned asset URL
-  `…/releases/download/v<version>/Klaxon-<version>.dmg` plus the SHA-256.
+  There is no Homebrew distribution.
 
 ## Architecture
 
