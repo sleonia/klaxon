@@ -32,6 +32,12 @@ else
 fi
 echo "Built: $APP"
 
+# Release/DMG builds only need the assembled bundle, not a local install.
+if [ "${KLAXON_NO_INSTALL:-0}" = "1" ]; then
+    echo "KLAXON_NO_INSTALL=1 — skipping install."
+    exit 0
+fi
+
 # Install where launchers index apps. Prefer /Applications, fall back to
 # ~/Applications (no admin needed).
 if [ -w /Applications ]; then
