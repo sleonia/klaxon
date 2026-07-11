@@ -80,8 +80,25 @@ Open **Settings…** from the menu-bar icon (or press **⌘,**). It has two tabs
 
 ## Install
 
-Requires **macOS 14 (Sonoma) or later** and the Xcode command-line tools
-(`xcode-select --install`). Then:
+Requires **macOS 14 (Sonoma) or later**.
+
+### Download
+
+Download the latest `Klaxon-<version>.dmg` from the
+[**Releases**](https://github.com/sleonia/klaxon/releases/latest) page, open it,
+and drag **Klaxon** into **Applications**.
+
+> Klaxon is only *ad-hoc* signed — it isn't in Apple's paid Developer Program,
+> so it can't be notarized. The first time you open a **downloaded** copy, macOS
+> Gatekeeper blocks it ("cannot be opened because the developer cannot be
+> verified"). Get past it once with **right-click → Open**, then **Open** in the
+> dialog — or run
+> `xattr -dr com.apple.quarantine /Applications/Klaxon.app`. It launches
+> normally after that.
+
+### Build from source
+
+Requires the Xcode command-line tools (`xcode-select --install`). Then:
 
 ```sh
 git clone https://github.com/sleonia/klaxon.git

@@ -14,6 +14,7 @@ swift test --filter AlertPlannerTests            # one test case
 swift test --filter 'AlertPlannerTests/testName' # one test method (regex over test id)
 
 ./Scripts/build-app.sh           # build release, assemble+sign Klaxon.app, install to /Applications
+./Scripts/make-dmg.sh            # build+ad-hoc-sign, package build/Klaxon-<version>.dmg + print SHA-256 (VERSION= overrides)
 ./Scripts/reinstall.sh           # quit → remove → rebuild+install → relaunch (keeps prefs + Calendar grant)
 ./Scripts/setup-signing.sh       # run ONCE: stable local signing identity so Calendar permission survives rebuilds
 ./Scripts/clean.sh               # uninstall app, wipe build/prefs, reset the Calendar TCC grant
@@ -27,6 +28,27 @@ swift test --filter 'AlertPlannerTests/testName' # one test method (regex over t
 Environment caveats that will bite you:
 - **`swift test` needs full Xcode.** With only Command Line Tools it fails with `no such module 'XCTest'`. This is environmental, not a code error.
 - **Calendar access requires the signed bundle.** A `swift run` / `.build` binary can *never* be granted EventKit access (no bundle, no usage strings). Use `Scripts/build-app.sh` to exercise anything that reads the calendar. `AppInfo.isRunningFromBundle` gates bundle-only APIs (e.g. `SMAppService` launch-at-login).
+
+## Releasing
+
+Distribution is an **ad-hoc-signed, un-notarized** `.dmg` on GitHub Releases —
+there is no paid Apple Developer Program, so notarization is impossible and a
+**downloaded** copy hits a one-time Gatekeeper prompt (the README documents the
+right-click-Open / `xattr` bypass). Ad-hoc signing needs no certificate, so a CI
+release job needs no secrets.
+
+- `./Scripts/make-dmg.sh` (or `VERSION=1.2.0 ./Scripts/make-dmg.sh`; default reads
+  `CFBundleShortVersionString` from `Resources/Info.plist`) builds + ad-hoc-signs
+  the app and writes `build/Klaxon-<version>.dmg`, printing its SHA-256 (a Homebrew
+  cask needs that hash).
+- To cut a release: bump the version in `Resources/Info.plist`, then:
+  ```sh
+  ./Scripts/make-dmg.sh
+  gh release create v<version> build/Klaxon-<version>.dmg --title "Klaxon v<version>" --notes "…"
+  ```
+- The DMG is **never committed to git** — it exists only as a Release asset.
+  Humans download `/releases/latest`; a Homebrew cask pins the versioned asset URL
+  `…/releases/download/v<version>/Klaxon-<version>.dmg` plus the SHA-256.
 
 ## Architecture
 
