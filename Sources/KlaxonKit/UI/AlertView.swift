@@ -169,9 +169,9 @@ public struct AlertView: View {
             onSnooze(meeting, TimeInterval(minutes) * 60)
         } label: {
             HStack(spacing: 8) {
-                keyHint("⌘\(index + 1)", tint: .white, fill: .white.opacity(0.22))
                 Text("Snooze \(minutes)m")
                     .font(.system(size: 18, weight: .semibold))
+                keyHint("⌘\(index + 1)", tint: .white, fill: .white.opacity(0.22))
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 12)

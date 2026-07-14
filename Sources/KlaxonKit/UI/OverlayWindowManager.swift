@@ -88,12 +88,13 @@ public final class OverlayWindowManager {
     }
 
     private func activateApp() {
-        // `activate(ignoringOtherApps:)` is deprecated under macOS 14's
-        // cooperative activation; prefer the argument-less form when present.
-        if #available(macOS 14.0, *) {
-            NSApp.activate()
-        } else {
-            NSApp.activate(ignoringOtherApps: true)
-        }
+        // Cooperative `activate()` (macOS 14+) is not guaranteed to steal key
+        // focus from whatever app the user is currently in — it can leave
+        // this accessory app's window frontmost but not actually key, so
+        // ↵/⌘1-3/esc (which require key-window status) can silently no-op
+        // even though the overlay is visible. This alert exists to interrupt
+        // right now, so force focus with the deprecated but currently
+        // functional `ignoringOtherApps` form.
+        NSApp.activate(ignoringOtherApps: true)
     }
 }
