@@ -11,7 +11,11 @@ IDENTITY="Klaxon Local Signing"
 KC="klaxon-signing.keychain"
 PASS="klaxon-local"
 
-if security find-identity -v -p codesigning 2>/dev/null | grep -q "$IDENTITY"; then
+# NOTE: no `-v`. The cert is self-signed, so it is never "valid" (untrusted
+# root) and `-v` would list zero identities — we would mint a fresh cert on
+# every run, which is exactly the signature churn this script exists to stop.
+# Must stay in sync with the check in build-app.sh.
+if security find-identity -p codesigning 2>/dev/null | grep -q "$IDENTITY"; then
     echo "Signing identity '$IDENTITY' already exists — nothing to do."
     exit 0
 fi
