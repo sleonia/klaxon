@@ -17,7 +17,7 @@ APP_NAME="Klaxon"
 VERSION="${VERSION:-$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Resources/Info.plist)}"
 
 # Assemble + ad-hoc sign the bundle without installing it locally.
-KLAXON_NO_INSTALL=1 ./Scripts/build-app.sh
+KLAXON_NO_INSTALL=1 KLAXON_ADHOC=1 ./Scripts/build-app.sh
 
 APP="build/${APP_NAME}.app"
 DMG="build/${APP_NAME}-${VERSION}.dmg"

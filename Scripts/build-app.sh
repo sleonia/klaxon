@@ -19,11 +19,36 @@ cp .build/release/Klaxon "$APP/Contents/MacOS/${APP_NAME}"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 
-# Prefer the stable self-signed identity from setup-signing.sh (so macOS keeps
-# the Calendar permission across rebuilds); fall back to ad-hoc otherwise.
+# Prefer the stable self-signed identity from setup-signing.sh so macOS keeps
+# the Calendar permission across rebuilds; fall back to ad-hoc otherwise.
+# TCC pins an ad-hoc app's grant to its CDHash, which changes on every build.
+#
+# KLAXON_ADHOC=1 forces the ad-hoc path for distribution builds: the local
+# identity is a self-signed cert that exists only on this machine, so shipping
+# it in the DMG would be strictly worse than ad-hoc for whoever downloads it.
 SIGN_ID="Klaxon Local Signing"
-if security find-identity -p codesigning 2>/dev/null | grep -q "$SIGN_ID" \
-   && codesign --force --sign "$SIGN_ID" "$APP" 2>/dev/null; then
+SIGN_KEYCHAIN="klaxon-signing.keychain"
+SIGN_KEYCHAIN_PASS="klaxon-local"
+
+if [ "${KLAXON_ADHOC:-0}" != "1" ] \
+   && security find-identity -p codesigning 2>/dev/null | grep -q "$SIGN_ID"; then
+    # The keychain relocks on every reboot/logout, and find-identity keeps
+    # listing the identity while it is locked — so the check above passing does
+    # NOT mean we can sign. Unlock first; signing a locked keychain dies with
+    # errSecInternalComponent.
+    #
+    # Only when the identity actually lives in OUR keychain: find-identity
+    # searches all of them, so an identity imported into the login keychain
+    # would otherwise send us to unlock a keychain that isn't there (exit 50),
+    # and set -e would kill a build that was fine.
+    if security list-keychains -d user | grep -q "$SIGN_KEYCHAIN"; then
+        security unlock-keychain -p "$SIGN_KEYCHAIN_PASS" "$SIGN_KEYCHAIN"
+    fi
+    # Deliberately no ad-hoc fallback here (set -e takes over on failure): a
+    # changed signature silently drops the Calendar grant, and the old fallback
+    # buried that under a "run setup-signing.sh" tip aimed at someone who
+    # already had. Callers must not destroy a working install before this runs.
+    codesign --force --sign "$SIGN_ID" "$APP"
     echo "Signed with '$SIGN_ID' (stable identity)."
 else
     codesign --force --sign - "$APP"
