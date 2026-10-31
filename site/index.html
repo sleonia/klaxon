@@ -185,6 +185,9 @@
   .nav-links a.anchor:hover { border-color: var(--ink); }
   .nav-links a.anchor:focus-visible { outline: 3px solid var(--alarm); outline-offset: 2px; }
 
+  @media (max-width: 960px) {
+    .nav-links a.anchor--wide { display: none; }
+  }
   @media (max-width: 780px) {
     .nav-links a.anchor { display: none; }
   }
@@ -214,7 +217,7 @@
   }
 
   /* ===== Section scaffolding ===== */
-  section { border-bottom: 2px solid var(--ink); }
+  section { border-bottom: 2px solid var(--ink); scroll-margin-top: 66px; }
   .sec-num {
     font-family: var(--mono);
     font-weight: 700;
@@ -614,35 +617,278 @@
     .feat:last-child{ border-bottom: none; }
   }
 
-  /* ===== Themes strip ===== */
-  .themes .wrap { padding: 52px 24px 56px; }
-  .theme-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 16px;
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
   }
-  .swatch {
-    border: 2px solid var(--ink);
-    box-shadow: 5px 5px 0 var(--shadow);
+  .sec-title { font-size: clamp(26px,3.4vw,40px); text-transform: uppercase; margin-left: auto; }
+  .sec-intro {
+    font-size: 14px;
+    line-height: 1.65;
+    max-width: 72ch;
+    margin: -16px 0 32px;
+    color: rgba(10,10,10,0.78);
+  }
+
+  /* ===== Alert stage: drawn like the app's AlertView at a 1200×750 design size ===== */
+  .screen {
+    position: relative;
+    aspect-ratio: 16 / 10;
     overflow: hidden;
-    transition: transform 0.1s steps(2), box-shadow 0.1s steps(2);
+    background: #1A1A1F;
   }
-  .swatch:hover { transform: translate(2px,2px); box-shadow: 3px 3px 0 var(--shadow); }
-  .swatch .grad { height: 92px; }
-  .swatch .name {
-    font-size: 10.5px;
-    font-weight: 700;
+  .screen .kx-stage { pointer-events: none; }
+  .kx-stage {
+    --acc: #DB2938;
+    --acc-soft: rgba(219,41,56,0.12);
+    --kx-round: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    position: absolute;
+    top: 0; left: 0;
+    width: 1200px; height: 750px;
+    transform-origin: 0 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    color: #fff;
+    text-align: center;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.2;
+    letter-spacing: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  .kx-bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
+  .kx-scrim { position: absolute; inset: 0; background: rgba(0,0,0,0.45); }
+  .kx-col { position: relative; display: flex; flex-direction: column; align-items: center; gap: 28px; width: 100%; }
+  .kx-col.group { gap: 22px; }
+  .kx-col.group.tight { gap: 16px; }
+  .kx-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 999px;
+    font-size: 14px; font-weight: 600;
+    color: rgba(255,255,255,0.85);
+  }
+  .kx-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; display: block; }
+  .kx-title {
+    font-size: 64px; font-weight: 800; line-height: 1.1;
+    padding: 0 60px; max-width: 100%;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .kx-time { font-family: var(--kx-round); font-size: 24px; font-weight: 500; color: rgba(255,255,255,0.9); }
+  .kx-count { font-family: var(--kx-round); font-size: 58px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .kx-actions { display: flex; flex-direction: column; align-items: center; gap: 18px; padding-top: 12px; }
+  .kx-group-actions { gap: 16px; padding-top: 4px; }
+  .kx-arm { transition: opacity 0.2s ease-in; }
+  .is-arming .kx-arm { opacity: 0.55; }
+  .kx-btn {
+    appearance: none; -webkit-appearance: none;
+    border: 0; margin: 0;
+    font-family: inherit;
+    display: inline-flex; align-items: center;
+    white-space: nowrap;
+    cursor: default;
+  }
+  .kx-overlay .kx-btn { cursor: pointer; }
+  .kx-overlay .kx-btn:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  .kx-ico { width: 1em; height: 1em; flex-shrink: 0; margin-right: 0.35em; }
+  .kx-key {
+    font-family: var(--kx-round); font-size: 13px; font-weight: 700; line-height: 1.2;
+    padding: 3px 7px; border-radius: 6px;
+    color: #fff; background: rgba(255,255,255,0.22);
+  }
+  .kx-join {
+    gap: 14px; padding: 18px 36px;
+    background: #fff; color: var(--acc);
+    border-radius: 999px;
+    font-size: 24px; font-weight: 700;
+  }
+  .kx-join .kx-key, .kx-rowjoin .kx-key { color: var(--acc); background: var(--acc-soft); }
+  .kx-snoozes { display: flex; gap: 14px; }
+  .kx-snooze {
+    gap: 8px; padding: 12px 18px;
+    background: rgba(255,255,255,0.15); color: #fff;
+    border-radius: 999px;
+    font-size: 18px; font-weight: 600;
+  }
+  .kx-dismiss {
+    gap: 8px; padding: 8px 18px;
+    background: none; color: rgba(255,255,255,0.8);
+    font-size: 16px; font-weight: 600;
+  }
+  .kx-dismiss .kx-key { color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.16); }
+  .kx-overlay .kx-join:hover, .kx-overlay .kx-rowjoin:hover { opacity: 0.92; }
+  .kx-overlay .kx-snooze:hover { background: rgba(255,255,255,0.24); }
+  .kx-overlay .kx-dismiss:hover { color: #fff; }
+  .kx-rows { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 980px; padding: 0 60px; }
+  .kx-row {
+    display: flex; align-items: center; gap: 18px;
+    padding: 16px 16px 16px 24px;
+    background: rgba(255,255,255,0.13);
+    border-radius: 18px;
+    text-align: left;
+  }
+  .kx-row-text { flex: 1; min-width: 0; }
+  .kx-row-title { font-size: 30px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kx-row-detail { font-size: 16px; font-weight: 500; color: rgba(255,255,255,0.8); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kx-rowjoin {
+    gap: 10px; padding: 10px 20px; flex-shrink: 0;
+    background: #fff; color: var(--acc);
+    border-radius: 999px;
+    font-size: 17px; font-weight: 700;
+  }
+  .kx-more { font-size: 16px; font-weight: 500; color: rgba(255,255,255,0.72); }
+
+  /* full-window test alert */
+  .kx-overlay { position: fixed; inset: 0; z-index: 1000; overflow: hidden; background: #1A1A1F; outline: none; }
+  .kx-overlay[hidden] { display: none; }
+  .kx-ov-hint {
+    position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%);
+    font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: rgba(255,255,255,0.7);
+    white-space: nowrap;
+  }
+  html.kx-lock, html.kx-lock body { overflow: hidden; }
+  .kx-toast {
+    position: fixed; left: 14px; bottom: 14px; z-index: 300;
+    max-width: min(460px, calc(100vw - 28px));
+    background: var(--ink); color: var(--paper);
+    border: 2px solid var(--ink);
+    box-shadow: 4px 4px 0 var(--alarm);
+    padding: 10px 14px;
+    font-size: 12px; font-weight: 600; line-height: 1.45; letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .kx-toast[hidden] { display: none; }
+
+  /* ===== Several meetings ===== */
+  .multi .wrap { padding: 52px 24px 56px; }
+  .multi-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 44px;
+    align-items: center;
+  }
+  .multi-lead {
+    font-family: var(--display);
+    font-size: clamp(26px, 3.2vw, 38px);
+    line-height: 1.02;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 8px 10px;
-    border-top: 2px solid var(--ink);
-    background: var(--paper);
-    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom: 18px;
   }
-  .swatch .name .no { color: var(--alarm); }
-  @media (prefers-reduced-motion: reduce){ .swatch{ transition:none; } }
-  @media (max-width: 900px){ .theme-grid { grid-template-columns: repeat(3,1fr); } }
-  @media (max-width: 480px){ .theme-grid { grid-template-columns: repeat(2,1fr); } }
+  .multi-lead .red { color: var(--alarm); }
+  .multi-sub { font-size: 14px; line-height: 1.65; color: rgba(10,10,10,0.78); max-width: 52ch; margin-bottom: 26px; }
+  .mpoints {
+    list-style: none;
+    border: 2px solid var(--ink);
+    background: var(--white);
+    box-shadow: 6px 6px 0 var(--shadow);
+  }
+  .mpoints li {
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 10px;
+    padding: 13px 16px;
+    border-bottom: 2px solid var(--ink);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .mpoints li:last-child { border-bottom: none; }
+  .mpoints .n { color: var(--alarm); font-weight: 700; font-size: 12px; letter-spacing: 0.08em; padding-top: 1px; }
+  .mpoints b { display: block; font-size: 12.5px; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 2px; }
+  .mpoints .kbd { height: 19px; min-width: 19px; font-size: 10.5px; padding: 0 4px; vertical-align: 1px; }
+  .multi-ctl { display: flex; align-items: center; gap: 14px; margin-top: 26px; flex-wrap: wrap; }
+  .multi-ctl .lbl { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+  .multi-ctl .seg { flex: 1; min-width: 200px; }
+
+  /* ===== Customizer ===== */
+  .custom .wrap { padding: 52px 24px 56px; }
+  .cz-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 36px;
+    align-items: start;
+  }
+  .cz-grid > .terminal { position: sticky; top: 90px; }
+  .panel {
+    border: 2px solid var(--ink);
+    background: var(--white);
+    box-shadow: 6px 6px 0 var(--shadow);
+  }
+  .ctl { padding: 16px 18px 18px; border-bottom: 2px dashed var(--ink); }
+  .ctl-head {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .ctl-head .k { color: var(--alarm); margin-right: 6px; }
+  .ctl-head .v { color: #595959; text-align: right; }
+  .ctl-note { font-size: 12px; line-height: 1.5; color: rgba(10,10,10,0.68); margin-top: 10px; }
+  .ctl-note[hidden] { display: none; }
+  .linkish {
+    appearance: none; background: none; border: 0; padding: 0;
+    font: inherit; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+  }
+  .linkish:hover { color: var(--alarm); }
+  .linkish:focus-visible { outline: 2px solid var(--alarm); outline-offset: 2px; }
+  .sw-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 9px; }
+  .sw {
+    appearance: none; -webkit-appearance: none;
+    position: relative;
+    aspect-ratio: 1;
+    padding: 0;
+    border: 2px solid var(--ink);
+    box-shadow: 3px 3px 0 var(--shadow);
+    background-size: cover; background-position: center;
+    cursor: pointer;
+    font-family: var(--mono); font-weight: 700; font-size: 15px; color: var(--ink);
+    display: grid; place-items: center;
+    transition: transform 0.08s steps(2), box-shadow 0.08s steps(2);
+  }
+  .sw:hover { transform: translate(1px,1px); box-shadow: 2px 2px 0 var(--shadow); }
+  .sw:focus-visible { outline: 3px solid var(--alarm); outline-offset: 3px; }
+  .sw[aria-pressed="true"] { transform: translate(3px,3px); box-shadow: 0 0 0 var(--shadow); }
+  .sw[aria-pressed="true"]::after {
+    content: "";
+    position: absolute; left: 50%; top: 50%;
+    width: 12px; height: 12px; margin: -6px 0 0 -6px;
+    background: var(--white); border: 2px solid var(--ink);
+  }
+  .sw .glyph { background: var(--paper); border: 1.5px solid var(--ink); padding: 0 4px; line-height: 1.3; font-size: 12px; }
+  .sw[aria-pressed="true"] .glyph { display: none; }
+  .seg {
+    display: grid;
+    grid-template-columns: repeat(var(--n, 5), 1fr);
+    gap: 2px;
+    background: var(--ink);
+    border: 2px solid var(--ink);
+  }
+  .seg button {
+    appearance: none; -webkit-appearance: none;
+    border: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--mono); font-weight: 700; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 10px 2px;
+    cursor: pointer;
+    min-width: 0;
+    min-height: 44px;
+  }
+  .seg button:hover { background: var(--white); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+  .seg button:disabled { color: rgba(10,10,10,0.3); cursor: not-allowed; background: var(--paper); }
+  .seg button:focus-visible { outline: 3px solid var(--alarm); outline-offset: -3px; }
+  .fire { padding: 18px; }
+  .fire .cap { width: 100%; font-size: 14px; padding: 15px 20px; }
+  .fire p { font-size: 12px; color: rgba(10,10,10,0.68); margin-top: 14px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+  @media (prefers-reduced-motion: reduce){ .sw, .kx-arm { transition: none; } }
+  @media (max-width: 900px){
+    .multi-grid, .cz-grid { grid-template-columns: 1fr; }
+    .cz-grid > .terminal { position: static; }
+  }
+  @media (max-width: 420px){ .sw-grid { gap: 7px; } .ctl { padding: 14px 14px 16px; } }
 
   /* ===== VS In Your Face ===== */
   .vs .wrap { padding: 52px 24px 56px; }
@@ -918,7 +1164,8 @@
     </div>
     <nav class="nav-links" aria-label="Primary">
       <a class="anchor" href="#features">FEATURES</a>
-      <a class="anchor" href="#themes">THEMES</a>
+      <a class="anchor anchor--wide" href="#several">SEVERAL MEETINGS</a>
+      <a class="anchor" href="#themes">CUSTOMIZE</a>
       <a class="anchor" href="https://github.com/sleonia/klaxon" data-goal="github">SOURCE</a>
       <a class="cap cap--alarm" href="https://github.com/sleonia/klaxon/releases/latest/download/Klaxon.dmg" data-goal="download_nav">
         DOWNLOAD
@@ -931,8 +1178,8 @@
 <!-- TICKER -->
 <div class="ticker" aria-hidden="true">
   <div class="ticker-track">
-    <span class="dot">///</span><span>FULL-SCREEN ALERTS ON EVERY DISPLAY</span><span class="dot">///</span><span>PRESS ↵ TO JOIN</span><span class="dot">///</span><span>FREE &amp; OPEN SOURCE — MIT</span><span class="dot">///</span><span>NO ACCOUNT · NO TELEMETRY</span><span class="dot">///</span><span>MENU-BAR NATIVE · NO DOCK ICON</span><span class="dot">///</span>
-    <span class="dot">///</span><span>FULL-SCREEN ALERTS ON EVERY DISPLAY</span><span class="dot">///</span><span>PRESS ↵ TO JOIN</span><span class="dot">///</span><span>FREE &amp; OPEN SOURCE — MIT</span><span class="dot">///</span><span>NO ACCOUNT · NO TELEMETRY</span><span class="dot">///</span><span>MENU-BAR NATIVE · NO DOCK ICON</span><span class="dot">///</span>
+    <span class="dot">///</span><span>FULL-SCREEN ALERTS ON EVERY DISPLAY</span><span class="dot">///</span><span>PRESS ↵ TO JOIN</span><span class="dot">///</span><span>SEVERAL MEETINGS? ONE ALERT</span><span class="dot">///</span><span>FREE &amp; OPEN SOURCE — MIT</span><span class="dot">///</span><span>NO ACCOUNT · NO TELEMETRY</span><span class="dot">///</span><span>MENU-BAR NATIVE · NO DOCK ICON</span><span class="dot">///</span>
+    <span class="dot">///</span><span>FULL-SCREEN ALERTS ON EVERY DISPLAY</span><span class="dot">///</span><span>PRESS ↵ TO JOIN</span><span class="dot">///</span><span>SEVERAL MEETINGS? ONE ALERT</span><span class="dot">///</span><span>FREE &amp; OPEN SOURCE — MIT</span><span class="dot">///</span><span>NO ACCOUNT · NO TELEMETRY</span><span class="dot">///</span><span>MENU-BAR NATIVE · NO DOCK ICON</span><span class="dot">///</span>
   </div>
 </div>
 
@@ -1062,27 +1309,113 @@
   </div>
 </section>
 
-<!-- THEMES -->
-<section class="themes" id="themes" aria-labelledby="themes-title">
+<!-- SEVERAL MEETINGS -->
+<section class="multi" id="several" aria-labelledby="multi-title">
   <div class="wrap">
     <div class="sec-head">
       <span class="sec-num">[03]</span>
-      <span class="sec-label">// THEMES</span>
-      <h2 id="themes-title" style="font-size:clamp(26px,3.4vw,40px);text-transform:uppercase;margin-left:auto;">PICK YOUR ALARM.</h2>
+      <span class="sec-label">// SEVERAL MEETINGS?</span>
+      <h2 id="multi-title" class="sec-title">ONE ALERT FOR ALL OF THEM.</h2>
     </div>
-    <div class="theme-grid reveal" style="--d:.1s">
-      <div class="swatch"><div class="grad" style="background:linear-gradient(150deg,#FF3B1E,#FF9130);"></div><div class="name">CLASSIC <span class="no">01</span></div></div>
-      <div class="swatch"><div class="grad" style="background:linear-gradient(150deg,#1E7BFF,#12D9C0);"></div><div class="name">OCEAN <span class="no">02</span></div></div>
-      <div class="swatch"><div class="grad" style="background:linear-gradient(150deg,#7A2BFF,#FF2DB0);"></div><div class="name">NEON <span class="no">03</span></div></div>
-      <div class="swatch"><div class="grad" style="background:linear-gradient(150deg,#0F1F14,#2FBF5A);"></div><div class="name">FOREST <span class="no">04</span></div></div>
-      <div class="swatch"><div class="grad" style="background:linear-gradient(150deg,#1A1A1A,#4A4A4A);"></div><div class="name">GRAPHITE <span class="no">05</span></div></div>
-      <div class="swatch"><div class="grad" style="background:linear-gradient(150deg,#FF7AB0,#FFC46B);"></div><div class="name">SUNSET <span class="no">06</span></div></div>
-      <div class="swatch"><div class="grad" style="background:linear-gradient(150deg,#101830,#3A5BFF);"></div><div class="name">MIDNIGHT <span class="no">07</span></div></div>
-      <div class="swatch"><div class="grad" style="background:linear-gradient(150deg,#B8860B,#FFD966);"></div><div class="name">AMBER <span class="no">08</span></div></div>
-      <div class="swatch"><div class="grad" style="background:linear-gradient(150deg,#0AA5A5,#84E9C8);"></div><div class="name">MINT <span class="no">09</span></div></div>
-      <div class="swatch"><div class="grad" style="background:linear-gradient(150deg,#7A0016,#FF2D1A);"></div><div class="name">EMBER <span class="no">10</span></div></div>
-      <div class="swatch"><div class="grad" style="background:conic-gradient(#FF3B1E,#1E7BFF,#2FBF5A,#FFD966,#FF3B1E);"></div><div class="name">RANDOM <span class="no">?</span></div></div>
-      <div class="swatch"><div class="grad" style="background:repeating-linear-gradient(45deg,#0A0A0A 0 8px,#F4F1E9 8px 16px);"></div><div class="name">CUSTOM <span class="no">IMG</span></div></div>
+    <div class="multi-grid">
+      <div class="reveal" style="--d:.05s">
+        <p class="multi-lead">DO YOU HAVE SEVERAL MEETINGS <span class="red">AT ONCE?</span></p>
+        <p class="multi-sub">Double-booked, back-to-back, or one standup on two calendars. Klaxon doesn't stack overlays or fire them one after another. Every meeting due within the same minute lands on a single alert, so you can pick the right call at a glance.</p>
+        <ol class="mpoints">
+          <li><span class="n">01</span><span><b>One screen, one countdown</b>Meetings due within a minute of each other share the alert. The countdown runs to the earliest start.</span></li>
+          <li><span class="n">02</span><span><b>A join key on every row</b><span class="kbd">↵</span> joins the first meeting. <span class="kbd">2</span> <span class="kbd">3</span> <span class="kbd">4</span> join the rest. Each row shows its calendar, time and call service.</span></li>
+          <li><span class="n">03</span><span><b>One decision covers all</b>Snooze or Dismiss applies to the whole group. Join one, and the others are dismissed.</span></li>
+          <li><span class="n">04</span><span><b>Nothing silently dropped</b>Up to four rows fit on screen. The rest are counted: “+2 more not shown”.</span></li>
+        </ol>
+      </div>
+      <div class="reveal" style="--d:.12s">
+        <div class="terminal">
+          <div class="term-bar">
+            <div class="lights" aria-hidden="true"><i></i><i></i><i></i></div>
+            <span class="title" id="multi-bar">KLAXON.ALERT — 3 MEETINGS</span>
+            <span class="live">PREVIEW</span>
+          </div>
+          <div class="screen" id="multi-screen" role="img" aria-label="Klaxon alert listing several meetings due together, each with its own Join button."><div class="kx-stage" aria-hidden="true"></div></div>
+        </div>
+        <div class="multi-ctl">
+          <span class="lbl" id="multi-lbl">MEETINGS DUE TOGETHER</span>
+          <div class="seg" style="--n:4" data-ctl="multi" role="group" aria-labelledby="multi-lbl">
+            <button type="button" data-v="2">2</button>
+            <button type="button" data-v="3">3</button>
+            <button type="button" data-v="4">4</button>
+            <button type="button" data-v="6">6</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CUSTOMIZE -->
+<section class="custom" id="themes" aria-labelledby="custom-title">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num">[04]</span>
+      <span class="sec-label">// TRY IT</span>
+      <h2 id="custom-title" class="sec-title">BUILD YOUR ALARM.</h2>
+    </div>
+    <p class="sec-intro reveal" style="--d:.05s">Pick a theme, how early it fires and which snooze buttons it shows. The preview uses the real overlay's layout. Then fire a test alert and let it take over this window.</p>
+    <noscript><p class="sec-intro">Enable JavaScript to use the interactive preview. You can still read about Klaxon and download the app without it.</p></noscript>
+    <div class="cz-grid reveal" style="--d:.1s">
+      <div class="terminal">
+        <div class="term-bar">
+          <div class="lights" aria-hidden="true"><i></i><i></i><i></i></div>
+          <span class="title">PREVIEW — YOUR ALERT</span>
+          <span class="live">PREVIEW</span>
+        </div>
+        <div class="screen" id="cz-screen" role="img" aria-label="Preview of your Klaxon alert with the settings chosen on the right."><div class="kx-stage" aria-hidden="true"></div></div>
+      </div>
+
+      <div class="panel">
+        <div class="ctl" role="group" aria-labelledby="ctl-theme">
+          <div class="ctl-head"><span id="ctl-theme"><span class="k">A</span>THEME</span><span class="v" id="theme-val">CLASSIC</span></div>
+          <div class="sw-grid" id="sw-grid"></div>
+          <input type="file" id="custom-file" accept="image/*" hidden />
+          <p class="ctl-note" id="custom-note" hidden>Your image stays in this browser. Nothing is uploaded. <button type="button" class="linkish" id="custom-change">Change image</button></p>
+        </div>
+        <div class="ctl" role="group" aria-labelledby="ctl-meet">
+          <div class="ctl-head"><span id="ctl-meet"><span class="k">B</span>MEETINGS AT ONCE</span><span class="v" id="meet-val"></span></div>
+          <div class="seg" style="--n:5" data-ctl="meetings">
+            <button type="button" data-v="1">1</button>
+            <button type="button" data-v="2">2</button>
+            <button type="button" data-v="3">3</button>
+            <button type="button" data-v="4">4</button>
+            <button type="button" data-v="6">6</button>
+          </div>
+          <p class="ctl-note" id="meet-note"></p>
+        </div>
+        <div class="ctl" role="group" aria-labelledby="ctl-lead">
+          <div class="ctl-head"><span id="ctl-lead"><span class="k">C</span>ALERT ME</span><span class="v" id="lead-val"></span></div>
+          <div class="seg" style="--n:6" data-ctl="lead">
+            <button type="button" data-v="0" aria-label="At start time">START</button>
+            <button type="button" data-v="1" aria-label="1M — 1 minute before">1M</button>
+            <button type="button" data-v="2" aria-label="2M — 2 minutes before">2M</button>
+            <button type="button" data-v="5" aria-label="5M — 5 minutes before">5M</button>
+            <button type="button" data-v="10" aria-label="10M — 10 minutes before">10M</button>
+            <button type="button" data-v="15" aria-label="15M — 15 minutes before">15M</button>
+          </div>
+        </div>
+        <div class="ctl" role="group" aria-labelledby="ctl-snooze">
+          <div class="ctl-head"><span id="ctl-snooze"><span class="k">D</span>SNOOZE BUTTONS</span><span class="v" id="snooze-val"></span></div>
+          <div class="seg" style="--n:5" data-ctl="snooze">
+            <button type="button" data-v="1">1M</button>
+            <button type="button" data-v="3">3M</button>
+            <button type="button" data-v="5">5M</button>
+            <button type="button" data-v="10">10M</button>
+            <button type="button" data-v="15">15M</button>
+          </div>
+          <p class="ctl-note">Up to three, or none at all. The app takes any duration from 1 to 120 minutes.</p>
+        </div>
+        <div class="fire">
+          <button type="button" class="cap cap--alarm" id="fire">FIRE A TEST ALERT <span class="kbd" aria-hidden="true">!</span></button>
+          <p>Simulates an alert in this window and plays the sound. No real calls open or reminders are scheduled. <span class="kbd">↵</span> joins, <span class="kbd">ESC</span> dismisses.</p>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -1091,7 +1424,7 @@
 <section class="vs" id="compare" aria-labelledby="vs-title">
   <div class="wrap">
     <div class="sec-head">
-      <span class="sec-num">[04]</span>
+      <span class="sec-num">[05]</span>
       <span class="sec-label">// VS IN YOUR FACE</span>
       <h2 id="vs-title" style="font-size:clamp(26px,3.4vw,40px);text-transform:uppercase;margin-left:auto;">A FREE, OPEN-SOURCE ALTERNATIVE TO IN YOUR FACE.</h2>
     </div>
@@ -1173,6 +1506,13 @@
     </div>
   </div>
 </footer>
+
+<!-- TEST ALERT (full window) -->
+<div class="kx-overlay" id="kx-overlay" role="dialog" aria-modal="true" aria-label="Test alert" tabindex="-1" hidden>
+  <div class="kx-stage"></div>
+  <div class="kx-ov-hint" aria-hidden="true">TEST ALERT · ESC DISMISSES</div>
+</div>
+<div class="kx-toast" id="kx-toast" role="status" aria-live="polite" hidden></div>
 
 <!-- COOKIE NOTICE (tiny, non-blocking) -->
 <div class="cookie" id="cookie-notice" role="region" aria-label="Cookie notice" hidden>
@@ -1277,6 +1617,8 @@
       } catch (e) {}
     }
 
+    window.klaxonPlay = playKlaxon;
+
     Array.prototype.forEach.call(document.querySelectorAll('[data-sound="klaxon"]'), function (b) {
       b.addEventListener('click', function (ev) { ev.preventDefault(); playKlaxon(); });
     });
@@ -1297,6 +1639,337 @@
       var privacy = document.getElementById('privacy');
       if (link && privacy) link.addEventListener('click', function () { privacy.open = true; });
     }
+  })();
+</script>
+
+<script>
+  /* Alert customizer: live previews drawn like the app's AlertView, plus a full-window test alert. */
+  (function () {
+    // Mirrors Theme.all in Sources/KlaxonKit/UI/Theme.swift (sRGB, top-leading → bottom-trailing).
+    var THEMES = [
+      { id: 'classic', name: 'Classic', a: '#DB2938', b: '#F2731A' },
+      { id: 'ocean',   name: 'Ocean',   a: '#0D408C', b: '#0D99A6' },
+      { id: 'forest',  name: 'Forest',  a: '#0D5938', b: '#599940' },
+      { id: 'slate',   name: 'Slate',   a: '#262B38', b: '#4D5973' },
+      { id: 'sunset',  name: 'Sunset',  a: '#FA5C59', b: '#8C338C' },
+      { id: 'grape',   name: 'Grape',   a: '#5C299E', b: '#A847CC' },
+      { id: 'rose',    name: 'Rose',    a: '#CC3373', b: '#FA8C8C' },
+      { id: 'aurora',  name: 'Aurora',  a: '#1A808C', b: '#7340A6' },
+      { id: 'mono',    name: 'Mono',    a: '#1A1A1F', b: '#47474D' },
+      { id: 'amber',   name: 'Amber',   a: '#CC730D', b: '#F2B833' }
+    ];
+    var MEETINGS = [
+      { title: 'Design Review',   cal: 'Work',     color: '#1BADF8', svc: 'Zoom',            dur: 30 },
+      { title: '1:1 with Alex',   cal: 'Work',     color: '#1BADF8', svc: 'Google Meet',     dur: 30 },
+      { title: 'Sprint Planning', cal: 'Team',     color: '#63DA38', svc: 'Microsoft Teams', dur: 60 },
+      { title: 'Dentist',         cal: 'Personal', color: '#FF9500', svc: null, loc: 'Main St 12', dur: 45 }
+    ];
+    var DESIGN_W = 1200;   // previews are laid out at 1200×750 (16:10), then scaled to their frame
+    var MAX_ROWS = 4;      // AlertPlanner.maxMeetingsPerAlert
+    var ARMING_MS = 700;   // AlertView.armingDelay
+
+    var state = { theme: 'classic', randomPick: THEMES[1], customURL: null, meetings: 1, lead: 2, snooze: [1, 3, 5], multi: 3 };
+
+    var czScreen = document.getElementById('cz-screen');
+    var multiScreen = document.getElementById('multi-screen');
+    if (!czScreen || !multiScreen) return;
+    var czStage = czScreen.firstElementChild;
+    var multiStage = multiScreen.firstElementChild;
+    var swGrid = document.getElementById('sw-grid');
+    var fileInput = document.getElementById('custom-file');
+    var ov = document.getElementById('kx-overlay');
+    var ovStage = ov.querySelector('.kx-stage');
+    var fireBtn = document.getElementById('fire');
+    var toastEl = document.getElementById('kx-toast');
+
+    // ---- formatting ----
+    var timeFmt = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
+    var start = new Date(); start.setHours(10, 0, 0, 0);
+    function clock(d) { return timeFmt.format(d); }
+    function range(m) { return clock(start) + ' – ' + clock(new Date(start.getTime() + m.dur * 60000)); }
+    function countText(s) {
+      if (s < 1) return 'Now';
+      var m = Math.floor(s / 60), r = s % 60;
+      return m + ':' + (r < 10 ? '0' : '') + r;
+    }
+    function rgba(hex, a) {
+      var n = parseInt(hex.slice(1), 16);
+      return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')';
+    }
+    function grad(t) { return 'linear-gradient(to bottom right,' + t.a + ',' + t.b + ')'; }
+    function themeById(id) { for (var i = 0; i < THEMES.length; i++) if (THEMES[i].id === id) return THEMES[i]; return THEMES[0]; }
+    function reroll() {
+      var pick;
+      do { pick = THEMES[Math.floor(Math.random() * THEMES.length)]; } while (pick === state.randomPick);
+      state.randomPick = pick;
+    }
+    function background() {
+      if (state.theme === 'custom' && state.customURL) {
+        return { name: 'Custom image', css: 'url("' + state.customURL + '")', image: true, accent: '#1A1A1F' };
+      }
+      var t = state.theme === 'random' ? state.randomPick : themeById(state.theme);
+      return { name: t.name, css: grad(t), accent: t.a };
+    }
+
+    // ---- alert markup (same structure and sizes as AlertView) ----
+    var VIDEO = '<svg class="kx-ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M2.5 7A2.5 2.5 0 0 1 5 4.5h8.5A2.5 2.5 0 0 1 16 7v10a2.5 2.5 0 0 1-2.5 2.5H5A2.5 2.5 0 0 1 2.5 17z"/><path fill="currentColor" d="M17 9.6l4.3-2.7a.5.5 0 0 1 .7.4v9.4a.5.5 0 0 1-.7.4L17 14.4z"/></svg>';
+    function key(t) { return '<span class="kx-key">' + t + '</span>'; }
+    function btn(live, cls, act, arg, inner) {
+      if (!live) return '<span class="kx-btn ' + cls + '">' + inner + '</span>';
+      return '<button type="button" class="kx-btn ' + cls + '" data-act="' + act + '" data-arg="' + arg + '">' + inner + '</button>';
+    }
+    function snoozeRow(live) {
+      if (!state.snooze.length) return '';
+      return '<div class="kx-snoozes">' + state.snooze.map(function (m, i) {
+        return btn(live, 'kx-snooze', 'snooze', m, 'Snooze ' + m + 'm' + key('⌘' + (i + 1)));
+      }).join('') + '</div>';
+    }
+    function dismissBtn(live, label) { return btn(live, 'kx-dismiss', 'dismiss', '', label + key('esc')); }
+
+    function alertHTML(n, live) {
+      var bg = background();
+      var html = '<div class="kx-bg" style="background-image:' + bg.css + '"></div>' + (bg.image ? '<div class="kx-scrim"></div>' : '');
+      var shown = Math.min(n, MAX_ROWS), skipped = n - shown;
+      if (shown === 1) {
+        var m = MEETINGS[0];
+        return html + '<div class="kx-col">'
+          + '<div class="kx-chip"><i class="kx-dot" style="background:' + m.color + '"></i>' + m.cal + '</div>'
+          + '<div class="kx-title">' + m.title + '</div>'
+          + '<div class="kx-time">' + range(m) + '</div>'
+          + '<div class="kx-count" data-count></div>'
+          + '<div class="kx-actions kx-arm">'
+          +   btn(live, 'kx-join', 'join', 0, VIDEO + 'Join ' + m.svc + key('↵'))
+          +   snoozeRow(live)
+          +   dismissBtn(live, 'Dismiss')
+          + '</div></div>';
+      }
+      var rows = '';
+      for (var i = 0; i < shown; i++) {
+        var r = MEETINGS[i];
+        var detail = [r.cal, range(r)].concat(r.loc ? [r.loc] : []).join(' · ');
+        rows += '<div class="kx-row"><i class="kx-dot" style="background:' + r.color + '"></i>'
+          + '<div class="kx-row-text"><div class="kx-row-title">' + r.title + '</div><div class="kx-row-detail">' + detail + '</div></div>'
+          + (r.svc ? btn(live, 'kx-rowjoin', 'join', i, VIDEO + 'Join ' + r.svc + key(i === 0 ? '↵' : String(i + 1))) : '')
+          + '</div>';
+      }
+      return html + '<div class="kx-col group' + (shown >= MAX_ROWS ? ' tight' : '') + '">'
+        + '<div class="kx-chip">' + n + ' meetings at ' + clock(start) + '</div>'
+        + '<div class="kx-count" data-count></div>'
+        + '<div class="kx-rows kx-arm">' + rows + '</div>'
+        + (skipped ? '<div class="kx-more">+' + skipped + ' more at ' + clock(start) + ' not shown</div>' : '')
+        + '<div class="kx-actions kx-group-actions kx-arm">' + snoozeRow(live) + dismissBtn(live, 'Dismiss all') + '</div>'
+        + '</div>';
+    }
+    function paintStage(stage, n, live) {
+      var bg = background();
+      stage.style.setProperty('--acc', bg.accent);
+      stage.style.setProperty('--acc-soft', rgba(bg.accent, 0.12));
+      stage.innerHTML = alertHTML(n, live);
+    }
+
+    // ---- controls ----
+    swGrid.innerHTML = THEMES.map(function (t) {
+      return '<button type="button" class="sw" data-theme="' + t.id + '" title="' + t.name + '" style="background-image:' + grad(t) + '"><span class="sr-only">' + t.name + '</span></button>';
+    }).join('')
+      + '<button type="button" class="sw" data-theme="random" title="Random: a different theme for every alert" style="background-image:conic-gradient(#DB2938,#F2B833,#599940,#0D99A6,#5C299E,#DB2938)"><span class="glyph" aria-hidden="true">?</span><span class="sr-only">Random</span></button>'
+      + '<button type="button" class="sw" data-theme="custom" title="Your own image" style="background-image:repeating-linear-gradient(45deg,#0A0A0A 0 6px,#F4F1E9 6px 12px)"><span class="glyph" aria-hidden="true">IMG</span><span class="sr-only">Custom image</span></button>';
+    var customSw = swGrid.querySelector('[data-theme="custom"]');
+
+    var MEET_NOTES = {
+      1: 'One meeting gets the big title, the countdown and a Join button.',
+      2: 'Due within the same minute, so they share one alert, with a Join per row.',
+      3: 'Due within the same minute, so they share one alert, with a Join per row.',
+      4: 'Four rows: the most one alert shows. The layout tightens to fit a 13″ screen.',
+      6: 'Six due together: four rows on screen, the other two counted under them.'
+    };
+
+    function setText(id, t) { var el = document.getElementById(id); if (el) el.textContent = t; }
+    function renderControls() {
+      Array.prototype.forEach.call(swGrid.querySelectorAll('.sw'), function (b) {
+        b.setAttribute('aria-pressed', String(b.getAttribute('data-theme') === state.theme));
+      });
+      if (state.customURL) customSw.style.backgroundImage = 'url("' + state.customURL + '")';
+      document.getElementById('custom-note').hidden = state.theme !== 'custom';
+      var themeName = state.theme === 'random' ? 'Random → ' + state.randomPick.name
+        : state.theme === 'custom' ? 'Custom image' : themeById(state.theme).name;
+      setText('theme-val', themeName.toUpperCase());
+      setText('meet-val', state.meetings === 1 ? '1 MEETING' : state.meetings + ' AT ONCE');
+      setText('meet-note', MEET_NOTES[state.meetings]);
+      setText('lead-val', state.lead === 0 ? 'AT START TIME' : state.lead + ' MIN BEFORE');
+      setText('snooze-val', state.snooze.length ? state.snooze.join(' · ') + ' MIN' : 'NONE');
+      setText('multi-bar', 'KLAXON.ALERT — ' + state.multi + ' MEETINGS');
+
+      Array.prototype.forEach.call(document.querySelectorAll('.seg[data-ctl]'), function (seg) {
+        var ctl = seg.getAttribute('data-ctl');
+        Array.prototype.forEach.call(seg.querySelectorAll('button'), function (b) {
+          var v = +b.getAttribute('data-v');
+          var on = ctl === 'snooze' ? state.snooze.indexOf(v) !== -1 : state[ctl] === v;
+          b.setAttribute('aria-pressed', String(on));
+          if (ctl === 'snooze') b.disabled = !on && state.snooze.length >= 3;
+        });
+      });
+    }
+
+    function renderAll() {
+      paintStage(czStage, state.meetings, false);
+      paintStage(multiStage, state.multi, false);
+      renderControls();
+      paintCounts();
+    }
+
+    swGrid.addEventListener('click', function (e) {
+      var b = e.target.closest('.sw');
+      if (!b) return;
+      var id = b.getAttribute('data-theme');
+      if (id === 'custom' && !state.customURL) { fileInput.click(); return; }
+      if (id === 'random') reroll();
+      state.theme = id;
+      renderAll();
+    });
+    fileInput.addEventListener('change', function () {
+      var f = fileInput.files && fileInput.files[0];
+      if (!f) return;
+      if (state.customURL) URL.revokeObjectURL(state.customURL);
+      state.customURL = URL.createObjectURL(f);
+      state.theme = 'custom';
+      fileInput.value = '';
+      renderAll();
+    });
+    document.getElementById('custom-change').addEventListener('click', function () { fileInput.click(); });
+
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest('.seg[data-ctl] button');
+      if (!b) return;
+      var ctl = b.parentNode.getAttribute('data-ctl');
+      var v = +b.getAttribute('data-v');
+      if (ctl === 'snooze') {
+        var i = state.snooze.indexOf(v);
+        if (i !== -1) state.snooze.splice(i, 1);
+        else if (state.snooze.length < 3) state.snooze.push(v);
+        state.snooze.sort(function (x, y) { return x - y; });
+      } else {
+        state[ctl] = v;
+        if (ctl === 'lead') { loopLeft = v * 60; hold = 0; }
+      }
+      renderAll();
+    });
+
+    // ---- countdowns ----
+    var loopLeft = state.lead * 60, hold = 0, testLeft = 0;
+    function setCounts(root, t) {
+      Array.prototype.forEach.call(root.querySelectorAll('[data-count]'), function (el) { el.textContent = t; });
+    }
+    function paintCounts() {
+      setCounts(czStage, countText(loopLeft));
+      setCounts(multiStage, countText(loopLeft));
+      if (!ov.hidden) setCounts(ovStage, countText(testLeft));
+    }
+    setInterval(function () {
+      // Previews count down to the meeting, sit on "Now" for a few seconds, then start over.
+      if (state.lead > 0) {
+        if (loopLeft > 0) loopLeft--;
+        else if (++hold >= 4) { hold = 0; loopLeft = state.lead * 60; }
+      }
+      if (!ov.hidden && testLeft > 0) testLeft--;
+      paintCounts();
+    }, 1000);
+
+    // ---- scale the 1200×750 stage to its frame ----
+    function fit(screen) {
+      screen.firstElementChild.style.transform = 'scale(' + (screen.clientWidth / DESIGN_W) + ')';
+    }
+    function fitOverlay() {
+      var w = window.innerWidth, h = window.innerHeight;
+      var s = Math.min(1, w / 1000, h / 800);
+      ovStage.style.width = (w / s) + 'px';
+      ovStage.style.height = (h / s) + 'px';
+      ovStage.style.transform = 'scale(' + s + ')';
+    }
+    var screens = [czScreen, multiScreen];
+    if ('ResizeObserver' in window) {
+      var ro = new ResizeObserver(function (entries) { entries.forEach(function (en) { fit(en.target); }); });
+      screens.forEach(function (sc) { ro.observe(sc); });
+    }
+    window.addEventListener('resize', function () {
+      screens.forEach(fit);
+      if (!ov.hidden) fitOverlay();
+    });
+    screens.forEach(fit);
+
+    // ---- full-window test alert ----
+    var armed = false, armTimer = null, toastTimer = null;
+
+    function toast(msg) {
+      toastEl.textContent = msg;
+      toastEl.hidden = false;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { toastEl.hidden = true; }, 4200);
+    }
+    function fire() {
+      if (state.theme === 'random') { reroll(); renderAll(); }
+      paintStage(ovStage, state.meetings, true);
+      testLeft = state.lead * 60;
+      armed = false;
+      ov.classList.add('is-arming');
+      clearTimeout(armTimer);
+      armTimer = setTimeout(function () { armed = true; ov.classList.remove('is-arming'); }, ARMING_MS);
+      ov.hidden = false;
+      document.documentElement.classList.add('kx-lock');
+      fitOverlay();
+      paintCounts();
+      ov.focus();
+      if (window.klaxonPlay) window.klaxonPlay();
+    }
+    function close(msg) {
+      ov.hidden = true;
+      document.documentElement.classList.remove('kx-lock');
+      clearTimeout(armTimer);
+      fireBtn.focus();
+      toast(msg);
+    }
+    function act(kind, arg) {
+      if (!armed) return;
+      var group = state.meetings > 1;
+      if (kind === 'join') {
+        var m = MEETINGS[arg];
+        if (!m || !m.svc) return;
+        close('Demo: join ' + m.svc + '. In the app, this opens the call' + (group ? ' and dismisses the other meetings.' : '.'));
+      } else if (kind === 'snooze') {
+        close('Snoozed ' + arg + ' min. The app brings ' + (group ? 'all of them' : 'it') + ' back then.');
+      } else {
+        close(group ? 'Dismissed all. Each later meeting still gets its own alert.' : 'Dismissed. The next meeting still gets its own alert.');
+      }
+    }
+
+    fireBtn.addEventListener('click', fire);
+    ov.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-act]');
+      if (b) act(b.getAttribute('data-act'), +b.getAttribute('data-arg') || 0);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (ov.hidden) return;
+      var mod = e.metaKey || e.ctrlKey;
+      if (e.key === 'Escape') { e.preventDefault(); act('dismiss'); }
+      else if (e.key === 'Enter') { e.preventDefault(); act('join', 0); }
+      else if (mod && /^[1-3]$/.test(e.key)) {
+        e.preventDefault();
+        var mins = state.snooze[+e.key - 1];
+        if (mins) act('snooze', mins);
+      }
+      else if (!mod && !e.altKey && /^[2-4]$/.test(e.key) && +e.key <= Math.min(state.meetings, MAX_ROWS)) {
+        act('join', +e.key - 1);
+      }
+      else if (e.key === 'Tab') {
+        // keep focus inside the alert
+        var f = ov.querySelectorAll('button');
+        if (!f.length) { e.preventDefault(); return; }
+        var first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && (document.activeElement === first || document.activeElement === ov)) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    });
+
+    renderAll();
   })();
 </script>
 </body>
