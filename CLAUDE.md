@@ -73,7 +73,9 @@ Keep new logic in this shape: pure functions of value types, with EventKit/timer
 
 **Overlay:** `OverlayWindowManager` renders an `AlertView` on *every* `NSScreen` via borderless `KeyableWindow`s at `.screenSaver` level that join all Spaces. Only the first window becomes key (owns keyboard input); the rest are `orderFrontRegardless`. Buttons and keyboard shortcuts no-op until a 700ms arming delay passes, so a click/keystroke in flight when the overlay appears can't instantly dismiss it.
 
-**Reactive settings spine:** `Preferences` is `UserDefaults`-backed; every mutation persists immediately and posts `.prefsChanged`, which `AppDelegate` observes to `replan()` and re-sync launch-at-login. `StatusItemController` and the SwiftUI settings are dumb view layers fed entirely through closures.
+**Reactive settings spine:** `Preferences` is `UserDefaults`-backed; every mutation persists immediately and posts `.prefsChanged`, which `AppDelegate` observes to `replan()`. `StatusItemController` and the SwiftUI settings are dumb view layers fed entirely through closures.
+
+**Launch at login:** `LaunchAtLoginService` is the only `SMAppService` boundary. The system's login-item record is the truth and `prefs.launchAtLogin` is only a display cache: `refresh()` copies the status into the pref (at launch, when Settings opens, when the app becomes active) and never writes the record; only the Settings toggle (`setEnabled`) registers or unregisters. Never act on the login item from `.prefsChanged`: an unrelated setting change (the ⌃⌥P pause) would then unregister a working item or re-add one the user removed. `LoginItemLocation.classify` (pure) refuses registration from a translocated or read-only disk-image copy, whose path is gone at the next login.
 
 **Concurrency:** Swift 6 tools version with strict concurrency; most types are `@MainActor`. Carbon-hotkey and EventKit C callbacks hop back onto the main actor via `MainActor.assumeIsolated`. The global ⌃⌥P pause hotkey uses Carbon `RegisterEventHotKey` specifically to avoid requiring the Accessibility permission an event tap would need.
 

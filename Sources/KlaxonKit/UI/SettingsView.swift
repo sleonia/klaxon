@@ -1,23 +1,31 @@
 import SwiftUI
 import AppKit
-import ServiceManagement
 import UniformTypeIdentifiers
 
 public struct SettingsView: View {
     @ObservedObject var prefs: Preferences
     let calendarService: CalendarService
+    let launchAtLoginLocation: LoginItemLocation
+    let onSetLaunchAtLogin: (Bool) -> Void
     let onTestAlert: () -> Void
 
     public init(prefs: Preferences, calendarService: CalendarService,
+                launchAtLoginLocation: LoginItemLocation,
+                onSetLaunchAtLogin: @escaping (Bool) -> Void,
                 onTestAlert: @escaping () -> Void) {
         self.prefs = prefs
         self.calendarService = calendarService
+        self.launchAtLoginLocation = launchAtLoginLocation
+        self.onSetLaunchAtLogin = onSetLaunchAtLogin
         self.onTestAlert = onTestAlert
     }
 
     public var body: some View {
         TabView {
-            GeneralTab(prefs: prefs, onTestAlert: onTestAlert)
+            GeneralTab(prefs: prefs,
+                       launchAtLoginLocation: launchAtLoginLocation,
+                       onSetLaunchAtLogin: onSetLaunchAtLogin,
+                       onTestAlert: onTestAlert)
                 .tabItem { Label("General", systemImage: "gearshape") }
             CalendarsTab(prefs: prefs, calendarService: calendarService)
                 .tabItem { Label("Calendars", systemImage: "calendar") }
@@ -36,6 +44,8 @@ private struct SnoozeSlot: Identifiable, Equatable {
 
 private struct GeneralTab: View {
     @ObservedObject var prefs: Preferences
+    let launchAtLoginLocation: LoginItemLocation
+    let onSetLaunchAtLogin: (Bool) -> Void
     let onTestAlert: () -> Void
 
     /// Editable mirror of `prefs.snoozeMinutes`, committed back on change.
@@ -135,10 +145,19 @@ private struct GeneralTab: View {
             }
 
             Section {
-                Toggle("Launch at login", isOn: $prefs.launchAtLogin)
-                    .disabled(!runningFromBundle)
+                // Not bound to the pref directly: the pref only mirrors the
+                // system's login item, and only this toggle may change that.
+                Toggle("Launch at login", isOn: Binding(
+                    get: { prefs.launchAtLogin },
+                    set: { onSetLaunchAtLogin($0) }))
+                    .disabled(!runningFromBundle
+                              || (!prefs.launchAtLogin && !launchAtLoginLocation.canRegister))
                 if !runningFromBundle {
                     Text("Available when running from the built app bundle.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else if let note = launchAtLoginLocation.explanation {
+                    Text(note)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
