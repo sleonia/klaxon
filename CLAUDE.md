@@ -22,6 +22,7 @@ swift test --filter 'AlertPlannerTests/testName' # one test method (regex over t
 .build/debug/Klaxon --test-alert                 # fire the overlay ~1.5s after launch (headless E2E)
 .build/debug/Klaxon --test-alert 6               # same, six meetings due together (4 shown + 2 skipped)
 .build/debug/Klaxon --screenshot docs/screenshots # re-render the README screenshots from the real SwiftUI views
+pngquant --quality 70-95 --speed 1 --strip --force --ext .png docs/screenshots/*.png  # then compress them (~5 MB → ~0.5 MB each)
 ```
 
 **After making code changes, reinstall the app** with `./Scripts/reinstall.sh` so the running menu-bar instance reflects them — the installed bundle is the only build that has calendar access, so a `swift build` alone won't show your change in the real app.
