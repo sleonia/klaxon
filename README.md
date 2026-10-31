@@ -28,12 +28,20 @@ your own image:
 
 ![Klaxon full-screen alert — Ocean theme](docs/screenshots/alert-ocean.png)
 
+Meetings that start at the same time share one alert, each with its own Join
+button:
+
+![Klaxon alert for three meetings starting together](docs/screenshots/alert-multi.png)
+
 ## Features
 
 - **Full-screen alerts** on every connected display, above other apps and
   Spaces, at a configurable lead time (at start, 1/2/5/10/15 minutes before).
 - **Keyboard-first** — **↵** joins, **⌘1 / ⌘2 / ⌘3** snooze, **esc** dismisses;
   every button carries its shortcut so they're discoverable, not hidden.
+- **Back-to-back clashes in one alert** — up to four meetings due together are
+  listed on a single alert (**↵** joins the first, **2 / 3 / 4** the others);
+  Snooze and Dismiss apply to all of them. Any beyond four are skipped.
 - **One-click join** — detects meeting links for 30+ services (Zoom, Google
   Meet, Microsoft Teams, Webex, Whereby, Jitsi, and more) from an event's URL,
   location, or notes and shows a Join button for whichever it finds.

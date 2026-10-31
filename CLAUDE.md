@@ -20,6 +20,7 @@ swift test --filter 'AlertPlannerTests/testName' # one test method (regex over t
 ./Scripts/clean.sh               # uninstall app, wipe build/prefs, reset the Calendar TCC grant
 
 .build/debug/Klaxon --test-alert                 # fire the overlay ~1.5s after launch (headless E2E)
+.build/debug/Klaxon --test-alert 6               # same, six meetings due together (4 shown + 2 skipped)
 .build/debug/Klaxon --screenshot docs/screenshots # re-render the README screenshots from the real SwiftUI views
 ```
 
@@ -60,14 +61,14 @@ Two targets: **`KlaxonKit`** holds all logic and UI; **`Klaxon`** is a ~10-line 
 **The core loop is `fetch → plan → arm → fire → act`, recomputed from scratch on every state change.** `AppDelegate` is the composition root that owns every service and drives it. `replan()` is called on calendar changes, wake-from-sleep, system-clock jumps, preference changes, snooze/dismiss/join, display-config changes, and a 10-minute housekeeping timer. There is no incremental timer adjustment — always recompute. When adding a new trigger, call `replan()`; don't hand-tune timers.
 
 **Purity boundary is the load-bearing convention.** Side effects live at the edges; the interesting decisions are pure and unit-tested:
-- `AlertPlanner.nextAlert(meetings, config, snoozes, dismissed, now)` → the single next `AlertPlan`. No clocks, no EventKit, no timers — `now` is passed in. This is what makes scheduling drift-proof and testable.
+- `AlertPlanner.nextAlert(meetings, config, snoozes, dismissed, now)` → the single next `AlertPlan`: every meeting whose fire date is within `groupWindow` (60s) of the earliest shares one alert, capped at `maxMeetingsPerAlert` (4), with the overflow in `skipped` (marked alerted, never shown). No clocks, no EventKit, no timers — `now` is passed in. This is what makes scheduling drift-proof and testable.
 - `MeetingLinkParser.detect(url, location, notes)` → `MeetingLink?`. Pure; 30+ services matched by host suffix (+ optional path), with schemeless-domain and generic-URL fallbacks.
 - `CalendarService` is the **only** EventKit boundary. Everything downstream operates on plain `Meeting` value types (`Sendable`), never `EKEvent`.
 - `MeetingScheduler` is a thin wake-safe `DispatchSourceTimer` wrapper; the fire interval is always derived from a target `Date` at arm time, never carried across sleeps.
 
 Keep new logic in this shape: pure functions of value types, with EventKit/timers/AppKit pushed to the composition root, mirrored by a `*Tests` file.
 
-**Per-occurrence decision state** lives in `AppDelegate`: `snoozes` (occurrence id → fire date), `dismissed`, and `alerted` (fire-once guard, cleared on snooze). These feed `plannerExclusions()` so the planner never re-picks them, and `prune()` drops state for occurrences that leave the 48h fetch window. Invariant: a transient calendar-access blip returns `[]` and must **not** wipe live state — mutations are guarded by `calendar.hasAccess`.
+**Per-occurrence decision state** lives in `AppDelegate`: `snoozes` (occurrence id → fire date), `dismissed`, and `alerted` (fire-once guard, cleared on snooze). Alert actions cover the whole group on screen: Snooze/Dismiss apply to every meeting shown, and Join dismisses the others. These feed `plannerExclusions()` so the planner never re-picks them, and `prune()` drops state for occurrences that leave the 48h fetch window. Invariant: a transient calendar-access blip returns `[]` and must **not** wipe live state — mutations are guarded by `calendar.hasAccess`.
 
 **Fire-time pre-flight:** when the armed timer fires, `AppDelegate.fire(_:)` re-fetches and re-plans *before* showing anything, so a meeting moved/cancelled/superseded while the app slept doesn't fire a stale alert.
 
