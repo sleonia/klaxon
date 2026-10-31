@@ -174,4 +174,57 @@ final class AlertPlannerTests: XCTestCase {
         let x = meeting("x", startsIn: 10)
         XCTAssertEqual(plan([x, a])?.meeting.eventIdentifier, "a")
     }
+
+    // MARK: - Grouping
+
+    func testMeetingsDueTogetherShareOneAlert() {
+        let a = meeting("a", startsIn: 600)
+        let b = meeting("b", startsIn: 600)
+        let later = meeting("later", startsIn: 1800)
+        let p = plan([later, b, a])
+        XCTAssertEqual(p?.meetings.map(\.eventIdentifier), ["a", "b"])
+        XCTAssertEqual(p?.skipped, [])
+        XCTAssertEqual(p?.fireDate, a.startDate.addingTimeInterval(-60))
+    }
+
+    func testGroupWindowIncludesMeetingsWithinSixtySeconds() {
+        let first = meeting("first", startsIn: 600)
+        let inside = meeting("inside", startsIn: 660)    // fires 60s later: grouped
+        let outside = meeting("outside", startsIn: 661)  // 61s later: next alert
+        let p = plan([outside, inside, first])
+        XCTAssertEqual(p?.meetings.map(\.eventIdentifier), ["first", "inside"])
+        XCTAssertEqual(p?.fireDate, first.startDate.addingTimeInterval(-60))
+    }
+
+    func testGroupIsSortedByStartThenTitle() {
+        // Both fire now; one already started within grace.
+        let startingNow = meeting("now", startsIn: 30)
+        let started = meeting("started", startsIn: -120)
+        XCTAssertEqual(plan([startingNow, started])?.meetings.map(\.eventIdentifier),
+                       ["started", "now"])
+    }
+
+    func testGroupCapsAtFourAndSkipsTheRest() {
+        let ids = ["a", "b", "c", "d", "e", "f"]
+        let all = ids.map { meeting($0, startsIn: 600) }
+        let p = plan(all.reversed())
+        XCTAssertEqual(p?.meetings.map(\.eventIdentifier), ["a", "b", "c", "d"])
+        XCTAssertEqual(p?.skipped.map(\.eventIdentifier), ["e", "f"])
+        XCTAssertEqual(AlertPlanner.maxMeetingsPerAlert, 4)
+    }
+
+    func testDismissedMeetingLeavesTheGroup() {
+        let a = meeting("a", startsIn: 600)
+        let b = meeting("b", startsIn: 600)
+        XCTAssertEqual(plan([a, b], dismissed: [a.id])?.meetings.map(\.eventIdentifier), ["b"])
+    }
+
+    func testSnoozedGroupComesBackTogether() {
+        let a = meeting("a", startsIn: 600)
+        let b = meeting("b", startsIn: 900)
+        let expiry = now.addingTimeInterval(120)
+        let p = plan([a, b], snoozes: [a.id: expiry, b.id: expiry])
+        XCTAssertEqual(p?.meetings.map(\.eventIdentifier), ["a", "b"])
+        XCTAssertEqual(p?.fireDate, expiry)
+    }
 }

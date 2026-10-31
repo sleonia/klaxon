@@ -62,10 +62,13 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Debug/E2E hook: `Klaxon --test-alert` fires the overlay shortly
         // after launch so the full alert path can be exercised headlessly.
-        if CommandLine.arguments.contains("--test-alert") {
+        // `--test-alert 5` shows five meetings due together (4 + 1 skipped).
+        let args = CommandLine.arguments
+        if let i = args.firstIndex(of: "--test-alert") {
+            let count = args.indices.contains(i + 1) ? Int(args[i + 1]) ?? 1 : 1
             Task { [weak self] in
                 try? await Task.sleep(for: .seconds(1.5))
-                self?.showTestAlert()
+                self?.showTestAlert(count: count)
             }
         }
     }
@@ -115,22 +118,29 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         overlay.onJoin = { [weak self] meeting in
             guard let self else { return }
             if let url = meeting.link?.url { NSWorkspace.shared.open(url) }
+            // Joining one meeting answers the whole alert: the others on it
+            // count as dismissed rather than popping up again.
+            self.dismissed.formUnion(self.overlay.currentMeetings.map(\.id))
             self.dismissed.insert(meeting.id)
             self.overlay.dismiss()
             self.replan()
         }
-        overlay.onSnooze = { [weak self] meeting, interval in
+        overlay.onSnooze = { [weak self] meetings, interval in
             guard let self else { return }
-            let fireAt = interval.map { Date().addingTimeInterval($0) } ?? meeting.startDate
-            self.snoozes[meeting.id] = fireAt
-            // Allow this occurrence to alert again when the snooze expires.
-            self.alerted.remove(meeting.id)
+            let now = Date()
+            for meeting in meetings {
+                // The same fire date for all, so they come back as one alert.
+                self.snoozes[meeting.id] = interval.map { now.addingTimeInterval($0) }
+                    ?? meeting.startDate
+                // Allow this occurrence to alert again when the snooze expires.
+                self.alerted.remove(meeting.id)
+            }
             self.overlay.dismiss()
             self.replan()
         }
-        overlay.onDismiss = { [weak self] meeting in
+        overlay.onDismiss = { [weak self] meetings in
             guard let self else { return }
-            self.dismissed.insert(meeting.id)
+            self.dismissed.formUnion(meetings.map(\.id))
             self.overlay.dismiss()
             self.replan()
         }
@@ -201,11 +211,9 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// Occurrences excluded from planning: dismissed, already-alerted, and the
-    /// one currently on screen.
+    /// ones currently on screen.
     private func plannerExclusions() -> Set<String> {
-        var excluded = dismissed.union(alerted)
-        if let showing = overlay.currentMeeting { excluded.insert(showing.id) }
-        return excluded
+        dismissed.union(alerted).union(overlay.currentMeetings.map(\.id))
     }
 
     /// Arms one timer for the next not-yet-shown alert.
@@ -229,17 +237,24 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             snoozes: snoozes, dismissed: plannerExclusions(), now: Date())
 
         // The event may have been deleted, moved, or superseded while we slept.
-        guard let fresh, fresh.meeting.id == plan.meeting.id,
+        // The fresh group may gain or lose members; it only has to still
+        // contain one of the meetings this timer was armed for.
+        let armedIDs = Set(plan.meetings.map(\.id))
+        guard let fresh, fresh.meetings.contains(where: { armedIDs.contains($0.id) }),
               fresh.fireDate.timeIntervalSinceNow < 2 else {
             replan()
             return
         }
 
-        overlay.show(meeting: fresh.meeting, background: currentBackground,
-                     snoozeMinutes: prefs.snoozeMinutes)
+        overlay.show(meetings: fresh.meetings, skippedCount: fresh.skipped.count,
+                     background: currentBackground, snoozeMinutes: prefs.snoozeMinutes)
         // Mark shown only if the overlay actually appeared (e.g. a display is
         // attached), so a headless miss retries later rather than vanishing.
-        if overlay.isShowing { alerted.insert(fresh.meeting.id) }
+        // Skipped meetings (over the per-alert cap) count as shown too, so
+        // they don't pop up on their own right after.
+        if overlay.isShowing {
+            alerted.formUnion((fresh.meetings + fresh.skipped).map(\.id))
+        }
         SoundPlayer.play(prefs.soundName)
         armTimer()
         statusController?.refresh()
@@ -255,22 +270,28 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Extras
 
-    private func showTestAlert() {
+    /// - Parameter count: sample meetings due together; past the per-alert
+    ///   cap the extras are reported as skipped, as a real alert would.
+    private func showTestAlert(count: Int = 1) {
         let start = Date().addingTimeInterval(90)
         // A vendor-neutral sample: real alerts show whichever of the 30+
         // supported services Klaxon detects on the actual event.
-        let meeting = Meeting(
-            eventIdentifier: "test-alert",
-            title: "Sample Meeting (Test)",
-            startDate: start,
-            endDate: start.addingTimeInterval(1800),
-            calendarTitle: "Work",
-            calendarColorHex: "#4A90D9",
-            link: MeetingLink(
-                serviceName: "Video Call",
-                url: URL(string: "https://example.com/join")!))
-        overlay.show(meeting: meeting, background: currentBackground,
-                     snoozeMinutes: prefs.snoozeMinutes)
+        let samples = (1...max(count, 1)).map { i in
+            Meeting(
+                eventIdentifier: "test-alert-\(i)",
+                title: count == 1 ? "Sample Meeting (Test)" : "Sample Meeting \(i) (Test)",
+                startDate: start,
+                endDate: start.addingTimeInterval(1800),
+                calendarTitle: "Work",
+                calendarColorHex: "#4A90D9",
+                link: MeetingLink(
+                    serviceName: "Video Call",
+                    url: URL(string: "https://example.com/join")!))
+        }
+        let cap = AlertPlanner.maxMeetingsPerAlert
+        overlay.show(meetings: Array(samples.prefix(cap)),
+                     skippedCount: max(samples.count - cap, 0),
+                     background: currentBackground, snoozeMinutes: prefs.snoozeMinutes)
         SoundPlayer.play(prefs.soundName)
     }
 
