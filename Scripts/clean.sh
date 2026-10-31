@@ -28,5 +28,5 @@ echo "Removing local signing keychain…"
 security delete-keychain klaxon-signing.keychain 2>/dev/null || true
 
 echo "Done."
-echo "Note: if you enabled 'Launch at login', macOS clears the orphaned entry"
-echo "shortly after the app is removed (System Settings › General › Login Items)."
+echo "Note: if you enabled 'Launch at login', macOS keeps the login item after the"
+echo "app is removed. Remove it in System Settings › General › Login Items."

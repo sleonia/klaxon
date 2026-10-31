@@ -1,6 +1,5 @@
 import AppKit
 import EventKit
-import ServiceManagement
 
 /// Composition root. Owns every service and drives the
 /// fetch → plan → arm → fire → act loop.
@@ -12,6 +11,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     private let scheduler = MeetingScheduler()
     private let overlay = OverlayWindowManager()
     private let hotKey = HotKeyManager()
+    private lazy var launchAtLogin = LaunchAtLoginService(prefs: prefs)
     private var statusController: StatusItemController?
     private var settingsController: SettingsWindowController?
 
@@ -38,6 +38,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
 
         settingsController = SettingsWindowController(
             prefs: prefs, calendarService: calendar,
+            launchAtLoginLocation: launchAtLogin.location,
+            onSetLaunchAtLogin: { [weak self] on in self?.launchAtLogin.setEnabled(on) },
             onTestAlert: { [weak self] in self?.showTestAlert() })
 
         wireStatusItem()
@@ -49,7 +51,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         startHousekeeping()
 
         // Adopt the system's login-item state, don't assert ours over it.
-        adoptLaunchAtLoginState()
+        launchAtLogin.refresh()
+        launchAtLogin.logState()
 
         Task { [weak self] in
             guard let self else { return }
@@ -100,7 +103,11 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         controller.menuBarIconOnly = { [weak self] in self?.prefs.menuBarIconOnly ?? false }
         controller.onTogglePause = { [weak self] in self?.prefs.paused.toggle() }
         controller.onTestAlert = { [weak self] in self?.showTestAlert() }
-        controller.onOpenSettings = { [weak self] in self?.settingsController?.show() }
+        controller.onOpenSettings = { [weak self] in
+            // The user may have changed Login Items in System Settings since.
+            self?.launchAtLogin.refresh()
+            self?.settingsController?.show()
+        }
         statusController = controller
     }
 
@@ -146,13 +153,19 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             MainActor.assumeIsolated { self?.replan() }
         })
 
+        // Coming back from System Settings › Login Items (where the user may
+        // have approved, enabled or removed Klaxon) re-activates the app, so
+        // re-read the login item then and the open Settings window stays true.
+        observers.append(NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.launchAtLogin.refresh() }
+        })
+
         observers.append(NotificationCenter.default.addObserver(
             forName: .prefsChanged, object: nil, queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated {
-                self?.syncLaunchAtLogin()
-                self?.replan()
-            }
+            MainActor.assumeIsolated { self?.replan() }
         })
 
         observers.append(NotificationCenter.default.addObserver(
@@ -259,58 +272,6 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         overlay.show(meeting: meeting, background: currentBackground,
                      snoozeMinutes: prefs.snoozeMinutes)
         SoundPlayer.play(prefs.soundName)
-    }
-
-    /// Startup: copy the system's state into the preference, never the reverse.
-    ///
-    /// The registration lives in the system's Background Task Management
-    /// database and the user can change it there (System Settings › General ›
-    /// Login Items) without us hearing about it. At launch that record is the
-    /// truth and the preference is only a cache of it, so we read, never write.
-    ///
-    /// Acting on the preference here would be actively destructive:
-    /// `launchAtLogin` defaults to `false`, so a user who enabled Klaxon from
-    /// System Settings — or an install that inherited a registration — would
-    /// get it silently `unregister()`ed on the very next launch.
-    private func adoptLaunchAtLoginState() {
-        // SMAppService only works from a real bundle, not `swift run`.
-        guard AppInfo.isRunningFromBundle else { return }
-        let enabled = SMAppService.mainApp.status == .enabled
-        if prefs.launchAtLogin != enabled {
-            prefs.launchAtLogin = enabled
-        }
-    }
-
-    /// The user moved the toggle: act on that intent, then report what actually
-    /// stuck. Only ever reached from `.prefsChanged` — see
-    /// `adoptLaunchAtLoginState()` for why launch must not run this.
-    private func syncLaunchAtLogin() {
-        // SMAppService only works from a real bundle, not `swift run`.
-        guard AppInfo.isRunningFromBundle else { return }
-        let service = SMAppService.mainApp
-        do {
-            if prefs.launchAtLogin, service.status != .enabled {
-                try service.register()
-            } else if !prefs.launchAtLogin, service.status == .enabled {
-                try service.unregister()
-            }
-        } catch {
-            NSLog("Klaxon: launch-at-login sync failed: \(error)")
-        }
-        // Only macOS can clear `.requiresApproval`, so a toggle-on that lands
-        // here is a dead end: we would snap the switch back off with nothing
-        // said. Send the user where the decision actually lives.
-        if prefs.launchAtLogin, service.status == .requiresApproval {
-            SMAppService.openSystemSettingsLoginItems()
-        }
-        // Unconditional, not just in `catch`: `register()` also returns without
-        // throwing while the item sits at `.requiresApproval`, which is not "on".
-        // The inequality guard is load-bearing — assigning fires `didSet` →
-        // `.prefsChanged` → straight back into here, which would never settle.
-        let actuallyEnabled = service.status == .enabled
-        if prefs.launchAtLogin != actuallyEnabled {
-            prefs.launchAtLogin = actuallyEnabled
-        }
     }
 
     /// Periodic safety net: re-plan every 10 minutes so a meeting that crosses
