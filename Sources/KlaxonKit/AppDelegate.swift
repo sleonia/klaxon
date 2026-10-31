@@ -117,7 +117,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     private func wireOverlay() {
         overlay.onJoin = { [weak self] meeting in
             guard let self else { return }
-            if let url = meeting.link?.url { NSWorkspace.shared.open(url) }
+            if let url = meeting.link?.url { Self.openMeetingLink(url) }
             // Joining one meeting answers the whole alert: the others on it
             // count as dismissed rather than popping up again.
             self.dismissed.formUnion(self.overlay.currentMeetings.map(\.id))
@@ -144,6 +144,17 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             self.overlay.dismiss()
             self.replan()
         }
+    }
+
+    /// Opens the meeting's own app (Zoom, Teams, …) when one is installed to
+    /// handle its URL scheme, else the https link in the default browser.
+    private static func openMeetingLink(_ url: URL) {
+        if let appURL = NativeAppURL.make(for: url),
+           NSWorkspace.shared.urlForApplication(toOpen: appURL) != nil,
+           NSWorkspace.shared.open(appURL) {
+            return
+        }
+        NSWorkspace.shared.open(url)
     }
 
     private func wireObservers() {

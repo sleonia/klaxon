@@ -64,6 +64,7 @@ Two targets: **`KlaxonKit`** holds all logic and UI; **`Klaxon`** is a ~10-line 
 **Purity boundary is the load-bearing convention.** Side effects live at the edges; the interesting decisions are pure and unit-tested:
 - `AlertPlanner.nextAlert(meetings, config, snoozes, dismissed, now)` → the single next `AlertPlan`: every meeting whose fire date is within `groupWindow` (60s) of the earliest shares one alert, capped at `maxMeetingsPerAlert` (4), with the overflow in `skipped` (marked alerted, never shown). No clocks, no EventKit, no timers — `now` is passed in. This is what makes scheduling drift-proof and testable.
 - `MeetingLinkParser.detect(url, location, notes)` → `MeetingLink?`. Pure; 30+ services matched by host suffix (+ optional path), with schemeless-domain and generic-URL fallbacks.
+- `NativeAppURL.make(url)` → the desktop-app URL (`zoommtg://`, `msteams://`, `slack://join-huddle`, `jitsi-meet://`) or `nil`. Pure; Join (`AppDelegate.openMeetingLink`) opens it only when `NSWorkspace` has a handler for the scheme, otherwise the https link.
 - `CalendarService` is the **only** EventKit boundary. Everything downstream operates on plain `Meeting` value types (`Sendable`), never `EKEvent`.
 - `MeetingScheduler` is a thin wake-safe `DispatchSourceTimer` wrapper; the fire interval is always derived from a target `Date` at arm time, never carried across sleeps.
 
