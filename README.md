@@ -44,7 +44,9 @@ button:
   Snooze and Dismiss apply to all of them. Any beyond four are skipped.
 - **One-click join** — detects meeting links for 30+ services (Zoom, Google
   Meet, Microsoft Teams, Webex, Whereby, Jitsi, and more) from an event's URL,
-  location, or notes and shows a Join button for whichever it finds.
+  location, or notes and shows a Join button for whichever it finds. Zoom,
+  Teams, Slack huddles and Jitsi open straight in their desktop app when it's
+  installed, with no browser tab in between.
 - **Configurable snooze** — 0–3 snooze buttons of your choosing (default 1 / 3 /
   5 minutes), plus Dismiss.
 - **Themes & custom background** — ten built-in gradient themes, a **Random**
